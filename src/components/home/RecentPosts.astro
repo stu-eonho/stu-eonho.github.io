@@ -1,0 +1,57 @@
+---
+import PostCard from '@/components/post/PostCard.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import type { Post } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props;
+const { t, href } = i18n(Astro.url);
+---
+
+<section aria-labelledby="recent-heading">
+  <div class="head" data-reveal>
+    <h2 class="section-title" id="recent-heading">{t.home.recentTitle}</h2>
+    <a class="all-link" href={href('/archive')}>{t.home.viewAll}</a>
+  </div>
+
+  {
+    posts.length > 0 ? (
+      <div class="card-grid grid" data-reveal-group>
+        {posts.map((post) => (
+          <PostCard post={post} reveal headingLevel={3} />
+        ))}
+      </div>
+    ) : (
+      <EmptyState icon="lucide:file-plus-2" title={t.home.emptyTitle} hint={t.home.emptyHint} />
+    )
+  }
+</section>
+
+<style>
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-ext-4);
+  }
+
+  .all-link {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--link);
+    flex-shrink: 0;
+  }
+
+  .all-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .grid {
+    margin-top: var(--spacing-ext-6);
+  }
+</style>

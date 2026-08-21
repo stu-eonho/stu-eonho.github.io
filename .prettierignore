@@ -1,0 +1,6 @@
+dist
+node_modules
+.astro
+_workspace
+DESIGN.md
+STUDY_LOG_SPEC.md

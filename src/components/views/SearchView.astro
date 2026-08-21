@@ -1,0 +1,14 @@
+---
+import ListLayout from '@/layouts/ListLayout.astro';
+import ListHeader from '@/components/post/ListHeader.astro';
+import SearchPanel from '@/components/search/SearchPanel.astro';
+import { i18n } from '@/config/i18n';
+
+/** `/search`와 `/en/search`가 공유하는 본문. */
+const { t } = i18n(Astro.url);
+---
+
+<ListLayout path="/search" title={t.search.title} description={t.search.description}>
+  <ListHeader title={t.search.title} />
+  <SearchPanel />
+</ListLayout>

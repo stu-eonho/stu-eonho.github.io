@@ -1,0 +1,146 @@
+---
+import { SITE, GOATCOUNTER_CODE } from '@/config/site';
+import { buildSeo, type SeoInput } from '@/lib/seo';
+import { i18n } from '@/config/i18n';
+import SiteHeader from '@/components/layout/SiteHeader.astro';
+import SiteFooter from '@/components/layout/SiteFooter.astro';
+import '@/styles/global.css';
+import '@/styles/motion.css';
+
+/**
+ * CRITICAL: `path`는 **언어 접두사를 뺀** 정규 경로다. `/en/archive`가 아니라 `/archive`.
+ * 언어는 `Astro.url`에서 파생되므로 페이지가 lang을 넘길 필요가 없다 —
+ * `/en/archive.astro`와 `/archive.astro`가 같은 props로 같은 컴포넌트를 부른다.
+ */
+interface Props extends Omit<SeoInput, 'lang'> {
+  /** CRITICAL: math: true인 글에서만 KaTeX CSS를 싣는다 (약 23KB 절약) */
+  katex?: boolean;
+  /** head에 삽입할 JSON-LD 문자열 */
+  jsonLd?: string;
+  bodyClass?: string;
+}
+
+const { katex = false, jsonLd, bodyClass, ...seoInput } = Astro.props;
+const { lang, t, href } = i18n(Astro.url);
+const seo = buildSeo({ ...seoInput, lang });
+
+// CRITICAL: 정적 호스팅이라 커스텀 HTTP 헤더를 설정할 수 없다. meta로 가능한 범위까지만 선언한다.
+// 'unsafe-inline'이 필요한 이유: 테마 초기화 인라인 스크립트와 Shiki 인라인 스타일.
+// nonce는 요청별 생성이 불가능하다.
+const csp = [
+  "default-src 'self'",
+  "img-src 'self' data:",
+  `script-src 'self' ${GOATCOUNTER_CODE ? 'https://gc.zgo.at ' : ''}'unsafe-inline'`,
+  "frame-src 'none'",
+  "style-src 'self' 'unsafe-inline'",
+].join('; ');
+---
+
+<!doctype html>
+<html lang={seo.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content={csp} />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{seo.fullTitle}</title>
+    <meta name="description" content={seo.description} />
+    <link rel="canonical" href={seo.canonical} />
+
+    {
+      /*
+      CRITICAL: hreflang은 상호 참조여야 한다 — 두 URL이 서로를 가리키지 않으면 무시된다.
+      buildSeo가 전 로케일 + x-default를 한 번에 만들어 그 조건을 구조적으로 보장한다.
+    */
+    }
+    {seo.alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+
+    <meta property="og:type" content={seo.type} />
+    <meta property="og:site_name" content={SITE.title} />
+    <meta property="og:title" content={seo.title} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:url" content={seo.canonical} />
+    <meta property="og:image" content={seo.ogImage} />
+    <meta property="og:locale" content={seo.ogLocale} />
+    {seo.publishedTime && <meta property="article:published_time" content={seo.publishedTime} />}
+    {seo.modifiedTime && <meta property="article:modified_time" content={seo.modifiedTime} />}
+    {seo.tags.map((tag) => <meta property="article:tag" content={tag} />)}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={seo.title} />
+    <meta name="twitter:description" content={seo.description} />
+    <meta name="twitter:image" content={seo.ogImage} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title={SITE.title} href={href('/rss.xml')} />
+
+    {/* 본문용 400 weight 하나만 preload 한다. weight를 늘리면 초기 요청이 그만큼 늘어난다. */}
+    <link
+      rel="preload"
+      href="/fonts/pretendard/Pretendard-Regular.subset.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    {
+      /*
+      CRITICAL: 테마 초기화는 렌더 차단 인라인 스크립트여야 한다.
+      스타일시트보다 먼저, body 렌더 전에 실행되어야 FOUC(밝은 화면 번쩍임)가 없다.
+      이 스크립트를 아래로 옮기거나 defer/async를 붙이면 회귀가 눈에 잘 띄지 않는다.
+    */
+    }
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('theme');
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.setAttribute('data-theme', stored);
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+        } catch {
+          /* localStorage 접근 불가 환경(프라이빗 모드 등)에서는 시스템 설정을 따른다 */
+        }
+      })();
+    </script>
+
+    {/* CRITICAL: math: true인 글에만 삽입한다. 자체 호스팅이며 CDN을 쓰지 않는다. */}
+    {katex && <link rel="stylesheet" href="/katex/katex.min.css" />}
+
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd} />}
+
+    {/* GoatCounter — 코드가 없으면 스크립트 태그 자체를 출력하지 않는다 */}
+    {
+      GOATCOUNTER_CODE && (
+        <script
+          is:inline
+          async
+          data-goatcounter={`https://${GOATCOUNTER_CODE}.goatcounter.com/count`}
+          src="https://gc.zgo.at/count.js"
+        />
+      )
+    }
+
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main">{t.site.skipToContent}</a>
+    <SiteHeader />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter />
+
+    <script>
+      // 모션 레이어 진입점.
+      // CRITICAL: 게이트 순서(reduced-motion → 대상 존재 → 동적 import)는 motion.ts 안에 있다.
+      import { initMotion } from '@/scripts/motion';
+      import { initShortcuts } from '@/scripts/shortcuts';
+      initMotion();
+      initShortcuts();
+    </script>
+  </body>
+</html>

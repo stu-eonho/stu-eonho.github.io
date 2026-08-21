@@ -1,0 +1,75 @@
+---
+/**
+ * 배지·칩 프리미티브.
+ *
+ * tone
+ *   accent   — 카테고리 배지 (배경 --accent-tint, 텍스트 --link)
+ *   neutral  — DRAFT, 프로젝트 완료/보관 상태
+ *   chip     — 스킬·스택 칩 (32px, 중립 배경)
+ *   interest — 관심 분야 칩 (파란 tint)
+ *
+ * CRITICAL: 칩은 링크가 아니다. 커서와 hover 효과를 주지 않는다 —
+ * 상호작용 가능한 것처럼 보이면 안 된다.
+ */
+export type BadgeTone = 'accent' | 'neutral' | 'chip' | 'interest';
+
+interface Props {
+  tone?: BadgeTone;
+  class?: string;
+}
+
+const { tone = 'accent', class: className } = Astro.props;
+const classes = ['badge', `badge-${tone}`, className].filter(Boolean).join(' ');
+---
+
+<span class={classes}><slot /></span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-pill); /* [verified] */
+    white-space: nowrap;
+    font-weight: 400;
+  }
+
+  /* 작은 배지 — 높이 24px, 12px 텍스트 */
+  .badge-accent,
+  .badge-neutral {
+    height: 24px;
+    padding: 0 10px;
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+  }
+
+  .badge-accent {
+    background: var(--accent-tint); /* [local extension] */
+    color: var(--link);
+  }
+
+  .badge-neutral {
+    background: var(--chip-fill); /* [local extension] */
+    color: var(--fg-secondary);
+  }
+
+  /* 칩 — 높이 32px, 14px 텍스트 */
+  .badge-chip,
+  .badge-interest {
+    height: 32px;
+    padding: 0 12px;
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+  }
+
+  .badge-chip {
+    background: var(--chip-fill); /* [local extension] */
+    color: var(--fg);
+  }
+
+  .badge-interest {
+    background: var(--interest-tint); /* [local extension] */
+    color: var(--link);
+  }
+</style>

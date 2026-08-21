@@ -1,0 +1,46 @@
+---
+import { alternatePath, i18n, LANG_META, otherLang } from '@/config/i18n';
+
+/**
+ * 한국어 ↔ 영어 전환.
+ *
+ * CRITICAL: 이것은 버튼이 아니라 **링크**다. 대응하는 언어의 페이지가 빌드 산출물에 실제로
+ * 존재하므로 JS가 필요 없다 — 스크립트 0바이트, 깜빡임 없음, JS를 꺼도 동작한다.
+ * 클라이언트에서 문자열을 갈아 끼우는 방식으로 되돌리지 않는다.
+ *
+ * CRITICAL: 아이콘 전용이 아니라 텍스트("EN"/"KO")를 보여 주지만, 그 두 글자만으로는
+ * 무슨 일이 일어나는지 불분명하다. aria-label에 목적지 언어를 풀어 쓴다.
+ *
+ * 표기 규칙: **가려는 쪽**을 보여 준다. 한국어 화면에서는 "EN"이 뜬다.
+ */
+const { lang, t } = i18n(Astro.url);
+const target = otherLang(lang);
+const targetMeta = LANG_META[target];
+const href = alternatePath(Astro.url.pathname, target);
+---
+
+<a
+  class="icon-button lang-toggle"
+  href={href}
+  hreflang={targetMeta.htmlLang}
+  lang={targetMeta.htmlLang}
+  aria-label={t.language.switchTo(targetMeta.nativeName)}
+>
+  <span aria-hidden="true">{targetMeta.code}</span>
+</a>
+
+<style>
+  /* .icon-button 규격(44×44, pill radius, 색 전이)은 global.css에 있다.
+     여기서는 아이콘 대신 글자가 들어가는 데 필요한 것만 얹는다. */
+  .lang-toggle {
+    font-size: var(--text-caption); /* 12px — 토큰의 7종 밖으로 나가지 않는다 */
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    font-weight: 600;
+    text-decoration: none;
+    /* 44px 히트 영역은 유지하되 두 글자가 갇히지 않게 가로만 늘어날 수 있게 둔다 */
+    min-width: 44px;
+    width: auto;
+    padding-inline: var(--spacing-compact);
+  }
+</style>

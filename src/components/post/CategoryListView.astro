@@ -1,0 +1,57 @@
+---
+import ListHeader from './ListHeader.astro';
+import PostCard from './PostCard.astro';
+import Pagination from '@/components/ui/Pagination.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import { categorySubtitle, type Category } from '@/config/categories';
+import type { PageSlice, Post } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+/** 카테고리 목록 본문. 1페이지와 2페이지 이후가 이 컴포넌트를 공유한다. */
+interface Props {
+  category: Category;
+  slice: PageSlice<Post>;
+  /** 카테고리 전체 글 수 (현재 페이지 수가 아니다) */
+  totalPosts: number;
+}
+
+const { category, slice, totalPosts } = Astro.props;
+const { lang, t, href } = i18n(Astro.url);
+---
+
+<ListHeader
+  title={category.label}
+  icon={category.icon}
+  subtitle={categorySubtitle(category, lang)}
+  count={t.list.categoryTotal(totalPosts)}
+/>
+
+{
+  slice.items.length > 0 ? (
+    <div class="card-grid" data-reveal-group>
+      {slice.items.map((post) => (
+        <PostCard post={post} reveal />
+      ))}
+    </div>
+  ) : (
+    <EmptyState
+      icon={category.icon}
+      title={t.list.emptyCategoryTitle}
+      hint={t.list.emptyCategoryHint(category.id)}
+      ctaLabel={t.list.browseOther}
+      ctaHref={href('/archive')}
+    />
+  )
+}
+
+{
+  /* 전체가 1페이지면 페이지네이션 영역 자체를 렌더링하지 않는다 */
+  slice.total > 1 && (
+    <Pagination
+      current={slice.current}
+      total={slice.total}
+      prevUrl={slice.prevUrl}
+      nextUrl={slice.nextUrl}
+    />
+  )
+}

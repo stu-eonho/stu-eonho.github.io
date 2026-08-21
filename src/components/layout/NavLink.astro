@@ -1,0 +1,53 @@
+---
+interface Props {
+  href: string;
+  active: boolean;
+}
+
+const { href, active } = Astro.props;
+---
+
+{
+  /*
+  CRITICAL: 선택 상태를 색상만으로 표시하지 않는다.
+  색상 + 2px 언더라인 + aria-current 삼중 표시 (DESIGN.md "Keep selected state explicit").
+*/
+}
+<a href={href} class:list={['nav-link', { active }]} aria-current={active ? 'page' : undefined}>
+  <slot />
+</a>
+
+<style>
+  .nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 44px; /* [local extension] 검증된 53px은 Apple Store 썸네일 전용이라 옮기지 않는다 */
+    padding-inline: var(--spacing-compact); /* 8px */
+    font-size: var(--text-body); /* [verified] product-gallery-tab 17px / 400 */
+    line-height: var(--text-body--line-height);
+    font-weight: 400;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color var(--duration-micro) var(--ease-standard);
+  }
+
+  .nav-link:hover {
+    color: var(--fg); /* [local extension] DESIGN.md는 hover를 캡처하지 않았다 */
+  }
+
+  .nav-link.active {
+    color: var(--fg);
+  }
+
+  .nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: var(--spacing-compact);
+    right: var(--spacing-compact);
+    bottom: 6px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: var(--radius-pill);
+  }
+</style>

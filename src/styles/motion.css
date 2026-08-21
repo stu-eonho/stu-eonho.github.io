@@ -1,0 +1,121 @@
+/* ==========================================================================
+   모션 레이어 — 진입 리빌
+   전부 [local extension]이다. DESIGN.md는 모션 토큰을 승격하지 않았다.
+
+   CRITICAL: 여기 정의된 기본값은 애니메이션의 "최종 상태"다.
+   `[data-reveal] { opacity: 0 }`을 기본값으로 두면 JS가 느리거나 실패했을 때
+   콘텐츠가 영영 보이지 않는다. 검색 엔진과 JS 비활성 사용자에게도 빈 페이지가 된다.
+   시작 상태는 스크립트가 anime.js를 실제로 로드한 뒤에만 세팅한다.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   리빌은 두 갈래다. 섞으면 깜빡인다.
+
+   [data-reveal-onload]  처음부터 화면에 보이는 블록 (히어로, 목록 헤더, 글 헤더).
+                         CSS 애니메이션이 첫 페인트와 함께 실행되므로 JS를 기다리지
+                         않는다. anime.js는 이 요소를 건드리지 않는다.
+
+   [data-reveal]         화면 밖에 있다가 스크롤로 들어오는 블록.
+                         anime.js가 담당하며, 스크립트 시작 시점에 이미 보이는
+                         요소는 대상에서 제외한다(motion.ts의 초기 가시성 검사).
+
+   CRITICAL: 이미 그려진 요소를 JS가 뒤늦게 숨겼다가 다시 보여주면 깜빡임이 된다.
+   위 두 갈래의 경계를 흐리지 않는다.
+   -------------------------------------------------------------------------- */
+
+[data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+/* reduced-motion에서는 스크립트가 애초에 게이트에서 반환하므로 값이 바뀌지 않지만,
+   혹시 남은 인라인 스타일이 있어도 최종 상태가 되도록 못을 박는다. */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* 첫 페인트와 함께 실행되는 진입 리빌.
+   렌더 차단 스타일시트에 들어 있으므로 "보였다가 사라졌다 나타나는" 구간이 없다.
+   JS가 없거나 실패해도 애니메이션은 끝까지 재생되어 최종 상태로 남는다. */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-reveal-onload] {
+  animation: reveal-in 360ms var(--ease-standard) both;
+  /* 블록 단위로 하나씩 들어온다. 총 지연은 --reveal-i 최대값 × 60ms로 400ms 안에 둔다. */
+  animation-delay: calc(var(--reveal-i, 0) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal-onload] {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   마이크로 인터랙션 — CSS로 충분한 것은 CSS에 둔다 (JS 예산 0)
+   ========================================================================== */
+
+/* 검색 결과 스켈레톤.
+   CRITICAL: 이 사이트에서 무한 루프 애니메이션은 이것 하나뿐이며,
+   reduced-motion에서는 global.css의 규칙이 1회로 고정해 사실상 정지시킨다. */
+@keyframes skeleton-pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.skeleton-bar {
+  height: 20px;
+  border-radius: var(--radius-control);
+  background: var(--chip-fill);
+  animation: skeleton-pulse 1200ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* 모바일 내비 시트 진입 — 8px 이내 이동 + 페이드, 240ms */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sheet-animate {
+  animation: sheet-in var(--duration-sheet) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-animate {
+    animation: none;
+  }
+}

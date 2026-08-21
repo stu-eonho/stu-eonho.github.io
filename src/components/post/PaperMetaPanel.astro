@@ -1,0 +1,107 @@
+---
+import Button from '@/components/ui/Button.astro';
+import { formatLong } from '@/lib/date';
+import { arxivUrl, doiUrl } from '@/lib/seo';
+import type { Post } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 논문 리뷰의 원 논문 정보 패널.
+ * 렌더링 조건은 호출부에서 `category.metaPanel === 'paper'`로 판정한다.
+ *
+ * CRITICAL: 외부 API를 호출하지 않는다. arXiv/DOI URL은 프론트매터 값으로 문자열만 조합한다.
+ * CRITICAL: 이 패널은 data-pagefind-body 밖에 있어 검색 인덱싱 대상이 아니다.
+ */
+interface Props {
+  paper: NonNullable<Post['data']['paper']>;
+}
+
+const { paper } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+
+// 4명 초과 시 앞 4명 + "외 N명"으로 축약한다.
+const shownAuthors = paper.authors.slice(0, 4);
+const restCount = paper.authors.length - shownAuthors.length;
+const authorLine =
+  restCount > 0
+    ? `${shownAuthors.join(', ')} ${t.paper.andMore(restCount)}`
+    : shownAuthors.join(', ');
+
+const links = [
+  paper.arxivId && { label: 'arXiv', href: arxivUrl(paper.arxivId) },
+  paper.doi && { label: 'DOI', href: doiUrl(paper.doi) },
+  paper.pdfUrl && { label: 'PDF', href: paper.pdfUrl },
+  paper.codeUrl && { label: 'Code', href: paper.codeUrl },
+].filter((link): link is { label: string; href: string } => Boolean(link));
+---
+
+<section
+  class="meta-panel"
+  aria-label={t.paper.panelLabel}
+  data-reveal-onload
+  style="--reveal-i: 1"
+>
+  <p class="eyebrow">{t.paper.eyebrow}</p>
+  <h2 class="paper-title" lang="en">{paper.paperTitle}</h2>
+  <p class="authors" lang="en">{authorLine}</p>
+  <p class="meta-text venue">{paper.venue} {paper.year}</p>
+
+  {
+    links.length > 0 && (
+      <div class="links">
+        {links.map((link) => (
+          <Button variant="compact-outline" href={link.href} external>
+            {link.label}
+          </Button>
+        ))}
+      </div>
+    )
+  }
+
+  {paper.readDate && <p class="read-date">{t.paper.readDate(formatLong(paper.readDate, lang))}</p>}
+</section>
+
+<style>
+  /* CRITICAL: 그림자를 쓰지 않는다. 배경 대비만으로 패널을 분리한다. */
+  .meta-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-2);
+    background: var(--panel);
+    border-radius: var(--radius-card); /* 18px */
+    padding: var(--spacing-content); /* 20px */
+    margin-top: var(--spacing-ext-7); /* 32px */
+  }
+
+  .paper-title {
+    font-size: var(--text-card);
+    line-height: var(--text-card--line-height);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .authors {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    color: var(--fg-secondary);
+  }
+
+  .venue {
+    margin: 0;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-ext-2);
+    margin-top: var(--spacing-ext-1);
+  }
+
+  .read-date {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    color: var(--fg-muted);
+  }
+</style>

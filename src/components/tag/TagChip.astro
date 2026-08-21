@@ -1,0 +1,64 @@
+---
+import { tagHref } from '@/lib/tags';
+import { langFromPath } from '@/config/i18n';
+
+interface Props {
+  slug: string;
+  label: string;
+  /** 태그 인덱스에서만 쓰는 사용 횟수 배지 */
+  count?: number;
+  /** 1: 14px / 2: 17px / 3: 20px — 태그 인덱스의 3단계 */
+  step?: 1 | 2 | 3;
+}
+
+const { slug, label, count, step = 1 } = Astro.props;
+const lang = langFromPath(Astro.url.pathname);
+---
+
+<a href={tagHref(slug, lang)} class={`tag-chip tag-step-${step}`}>
+  <span class="tag-label">#{label}</span>
+  {count !== undefined && <span class="tag-count">{count}</span>}
+</a>
+
+<style>
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    /* 최소 히트 영역 44px (WCAG 2.5.8) */
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    background: var(--chip-fill);
+    color: var(--fg);
+    text-decoration: none;
+    transition:
+      background-color var(--duration-micro) var(--ease-standard),
+      color var(--duration-micro) var(--ease-standard);
+  }
+
+  .tag-chip:hover {
+    color: var(--link);
+  }
+
+  .tag-step-1 .tag-label {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+  }
+
+  .tag-step-2 .tag-label {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  .tag-step-3 .tag-label {
+    font-size: var(--text-card);
+    line-height: var(--text-card--line-height);
+  }
+
+  .tag-count {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    color: var(--fg-muted);
+  }
+</style>

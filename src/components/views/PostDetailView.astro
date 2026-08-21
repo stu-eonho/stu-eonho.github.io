@@ -1,0 +1,27 @@
+---
+import { render } from 'astro:content';
+import PostLayout from '@/layouts/PostLayout.astro';
+import { getPublishedPosts, getSiblings, postsForLang, type Post } from '@/lib/posts';
+import { estimateReadingTime } from '@/lib/reading-time';
+import { i18n } from '@/config/i18n';
+
+/**
+ * `/:category/:slug`와 `/en/:category/:slug`가 공유하는 본문.
+ *
+ * 이웃 글은 **같은 언어 화면에 실제로 걸리는 목록** 기준으로 계산한다.
+ * 전체 글 목록으로 계산하면 이전/다음이 번역본과 원문 사이를 오간다.
+ */
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { lang } = i18n(Astro.url);
+const { Content, headings } = await render(post);
+const siblings = getSiblings(post, postsForLang(await getPublishedPosts(), lang));
+const readingTime = estimateReadingTime(post.body);
+---
+
+<PostLayout post={post} headings={headings} readingTime={readingTime} siblings={siblings}>
+  <Content />
+</PostLayout>

@@ -1,0 +1,55 @@
+---
+import ListLayout from '@/layouts/ListLayout.astro';
+import ListHeader from '@/components/post/ListHeader.astro';
+import TagChip from '@/components/tag/TagChip.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import { getPublishedPosts, postsForLang } from '@/lib/posts';
+import { collectTags, tagSizeStep } from '@/lib/tags';
+import { i18n } from '@/config/i18n';
+
+/**
+ * `/tags`와 `/en/tags`가 공유하는 본문.
+ * 태그 집합은 언어마다 다르다 — 한국어 글의 태그와 영어 글의 태그가 같으리라는 보장이 없다.
+ */
+const { lang, t, href } = i18n(Astro.url);
+const tags = collectTags(postsForLang(await getPublishedPosts(), lang));
+---
+
+<ListLayout path="/tags" title={t.tags.title} description={t.tags.description}>
+  <ListHeader title={t.tags.title} count={t.tags.total(tags.length)} />
+
+  {
+    tags.length > 0 ? (
+      <ul class="cloud" data-reveal-group>
+        {tags.map((tag) => (
+          <li data-reveal>
+            <TagChip
+              slug={tag.slug}
+              label={tag.label}
+              count={tag.count}
+              step={tagSizeStep(tag.count)}
+            />
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <EmptyState
+        icon="lucide:tags"
+        title={t.tags.emptyTitle}
+        hint={t.tags.emptyHint}
+        ctaLabel={t.tags.viewArchive}
+        ctaHref={href('/archive')}
+      />
+    )
+  }
+</ListLayout>
+
+<style>
+  .cloud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-ext-2);
+    list-style: none;
+  }
+</style>

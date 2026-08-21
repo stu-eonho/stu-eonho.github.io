@@ -1,0 +1,32 @@
+---
+import ListLayout from '@/layouts/ListLayout.astro';
+import CategoryListView from '@/components/post/CategoryListView.astro';
+import { categorySubtitle, getCategory } from '@/config/categories';
+import { filterByCategory, getPublishedPosts, paginate, postsForLang } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 카테고리 목록 — 1페이지와 2페이지 이후, 그리고 두 언어가 전부 이 컴포넌트를 공유한다.
+ * CRITICAL: 1페이지는 `/{category}`이며 `page/1`을 생성하지 않는다(경로 생성은 페이지 파일 담당).
+ */
+interface Props {
+  categoryId: string;
+  /** 1-based */
+  page: number;
+}
+
+const { categoryId, page } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+
+const category = getCategory(categoryId);
+const posts = filterByCategory(postsForLang(await getPublishedPosts(), lang), category.id);
+const slice = paginate(posts, page, category.id, lang);
+
+const path = slice.current === 1 ? `/${category.id}` : `/${category.id}/page/${slice.current}`;
+const title =
+  slice.current === 1 ? category.label : `${category.label} — ${t.list.pageSuffix(slice.current)}`;
+---
+
+<ListLayout path={path} title={title} description={categorySubtitle(category, lang)}>
+  <CategoryListView category={category} slice={slice} totalPosts={posts.length} />
+</ListLayout>

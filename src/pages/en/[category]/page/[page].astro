@@ -1,0 +1,27 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CategoryPageView from '@/components/views/CategoryPageView.astro';
+import { CATEGORIES } from '@/config/categories';
+import { filterByCategory, getPublishedPosts, pageCount, postsForLang } from '@/lib/posts';
+
+/**
+ * 카테고리 목록 2페이지 이후.
+ * CRITICAL: `page/1`은 생성하지 않는다 — 1페이지는 `/{category}`가 담당한다.
+ * 페이지 수는 **이 언어 화면의 글 수**로 센다. 번역본 유무에 따라 언어별로 달라질 수 있다.
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+  const all = postsForLang(await getPublishedPosts(), 'en');
+  return CATEGORIES.flatMap((category) => {
+    const total = pageCount(filterByCategory(all, category.id).length);
+    const pages: { params: { category: string; page: string } }[] = [];
+    for (let page = 2; page <= total; page += 1) {
+      pages.push({ params: { category: category.id, page: String(page) } });
+    }
+    return pages;
+  });
+};
+
+const { category, page } = Astro.params;
+---
+
+<CategoryPageView categoryId={category!} page={Number(page)} />

@@ -1,0 +1,85 @@
+---
+import { Icon } from 'astro-icon/components';
+
+/** 목록 페이지 헤더. h1은 페이지당 하나이며 여기서 나온다. */
+interface Props {
+  title: string;
+  /** lucide 아이콘 이름. 카테고리 목록에서만 쓴다 */
+  icon?: string;
+  /** 부제 — "{labelKo} · {description}" 등 */
+  subtitle?: string;
+  /** "총 12편" 같은 카운트 문구 */
+  count?: string;
+  /** 우측 보조 링크 */
+  actionLabel?: string;
+  actionHref?: string;
+}
+
+const { title, icon, subtitle, count, actionLabel, actionHref } = Astro.props;
+---
+
+<header class="list-header" data-reveal-onload>
+  <div class="title-row">
+    <h1 class="section-title title">
+      {icon && <Icon name={icon} class="title-icon" aria-hidden="true" />}
+      {title}
+    </h1>
+    {
+      actionLabel && actionHref && (
+        <a class="action" href={actionHref}>
+          {actionLabel}
+        </a>
+      )
+    }
+  </div>
+  {subtitle && <p class="subtitle">{subtitle}</p>}
+  {count && <p class="meta-text">{count}</p>}
+</header>
+
+<style>
+  .list-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-2);
+    margin-bottom: var(--spacing-ext-8);
+  }
+
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-ext-4);
+    flex-wrap: wrap;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-ext-3);
+  }
+
+  .title :global(.title-icon) {
+    width: 28px;
+    height: 28px;
+    color: var(--accent);
+    stroke-width: 1.5;
+    flex-shrink: 0;
+  }
+
+  .subtitle {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--fg-muted);
+  }
+
+  .action {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--link);
+  }
+
+  .action:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>

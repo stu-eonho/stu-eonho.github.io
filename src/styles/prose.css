@@ -1,0 +1,287 @@
+/* ==========================================================================
+   본문(prose) 타이포 · 코드 · 수식 · 표
+   @tailwindcss/typography의 기본 수치는 쓰지 않고 DESIGN.md 토큰으로 전면 override 한다.
+   CRITICAL: 색상 리터럴을 쓰지 않고 전부 global.css의 CSS 변수를 경유한다.
+   ========================================================================== */
+
+.prose-body {
+  max-width: var(--prose-max);
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  /* [local extension] 한글 본문은 라틴 문자보다 넉넉한 행간이 필요해 25px → 28px */
+  line-height: 28px;
+  letter-spacing: var(--text-body--letter-spacing);
+  color: var(--fg);
+}
+
+.prose-body > * + * {
+  margin-top: var(--spacing-content); /* 문단 간 20px */
+}
+
+/* ---------- 헤딩 ---------- */
+
+.prose-body h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-tile);
+  line-height: var(--text-tile--line-height);
+  /* [local extension] 검증값은 weight 400이지만 본문 위계상 문단과 구분되지 않는다 */
+  font-weight: 600;
+  color: var(--fg);
+  margin-top: var(--spacing-ext-9); /* 56px */
+  margin-bottom: var(--spacing-content); /* 20px */
+}
+
+.prose-body h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-card);
+  line-height: var(--text-card--line-height);
+  font-weight: 600;
+  color: var(--fg);
+  margin-top: var(--spacing-ext-7); /* 32px */
+  margin-bottom: var(--spacing-ext-3);
+}
+
+.prose-body h4 {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: 600;
+  color: var(--fg);
+  margin-top: var(--spacing-ext-6);
+  margin-bottom: var(--spacing-ext-2);
+}
+
+/* 헤딩 앵커 — hover 시 왼쪽에 해시 기호가 나타난다 */
+.prose-body :is(h2, h3) {
+  position: relative;
+}
+
+.prose-body .heading-anchor {
+  position: absolute;
+  left: -1.1em;
+  top: 0;
+  width: 1.1em;
+  color: var(--fg-muted);
+  opacity: 0;
+  text-decoration: none;
+  transition: opacity var(--duration-fade) var(--ease-standard);
+}
+
+.prose-body :is(h2, h3):hover .heading-anchor,
+.prose-body .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+/* 터치 환경에서는 hover가 없으므로 앵커를 숨긴 채 두지 않는다 —
+   좁은 화면에서는 왼쪽 여백이 없어 제목 뒤로 옮긴다. */
+@media (hover: none), (max-width: 1023px) {
+  .prose-body .heading-anchor {
+    position: static;
+    display: inline;
+    margin-left: var(--spacing-ext-2);
+    opacity: 1;
+    font-size: var(--text-small);
+  }
+}
+
+/* ---------- 인라인 요소 ---------- */
+
+.prose-body a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.prose-body a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: currentColor;
+  text-underline-offset: 3px;
+}
+
+.prose-body strong {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.prose-body blockquote {
+  border-left: 3px solid var(--hairline-strong);
+  padding-left: var(--spacing-content);
+  color: var(--fg-secondary);
+  font-style: normal; /* 기울임을 쓰지 않는다 */
+}
+
+.prose-body :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  background: var(--chip-fill);
+  padding: 2px 6px;
+  border-radius: var(--radius-control);
+}
+
+/* ---------- 목록 ---------- */
+
+.prose-body :is(ul, ol) {
+  padding-left: var(--spacing-ext-6); /* 24px */
+  line-height: 26px; /* [local extension] */
+}
+
+.prose-body :is(ul, ol) > li + li {
+  margin-top: var(--spacing-ext-2); /* 8px */
+}
+
+.prose-body ul {
+  list-style: disc;
+}
+
+.prose-body ol {
+  list-style: decimal;
+}
+
+.prose-body li::marker {
+  color: var(--fg-muted);
+}
+
+/* ---------- 코드 블록 ---------- */
+
+.code-block {
+  position: relative;
+}
+
+.prose-body pre {
+  border-radius: var(--radius-card);
+  padding: var(--spacing-content);
+  /* CRITICAL: 코드 블록 자체가 스크롤한다. body가 가로 스크롤되면 안 된다. */
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  line-height: 24px; /* [local extension] */
+  border: 1px solid var(--hairline);
+  margin: 0;
+}
+
+.prose-body pre code {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  padding: 0;
+}
+
+/* Shiki 듀얼 테마 — 다크에서 CSS 변수를 교체한다 */
+:root[data-theme='dark'] .astro-code,
+:root[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .astro-code,
+  :root:not([data-theme='light']) .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+/* 코드 복사 버튼 — compact 규격. hover 시 나타난다 */
+.code-copy {
+  position: absolute;
+  top: var(--spacing-compact);
+  right: var(--spacing-compact);
+  height: 36px;
+  padding: var(--spacing-compact) var(--spacing-control-inline);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--link);
+  color: var(--link);
+  background: var(--surface);
+  font-size: var(--text-small);
+  line-height: 1;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity var(--duration-fade) var(--ease-standard);
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+/* CRITICAL: hover 전용 정보를 만들지 않는다 — 터치 환경에서는 항상 보인다 */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+}
+
+/* ---------- 표 ---------- */
+
+/* CRITICAL: 표는 가로 스크롤 컨테이너로 감싼다. 페이지 자체가 가로 스크롤되면 안 된다. */
+.table-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hairline);
+}
+
+.prose-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  line-height: 24px; /* [local extension] */
+}
+
+.prose-body :is(th, td) {
+  padding: var(--spacing-ext-3); /* 12px */
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+}
+
+.prose-body th {
+  background: var(--panel);
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.prose-body tr:last-child :is(th, td) {
+  border-bottom: none;
+}
+
+/* ---------- 이미지 ---------- */
+
+.prose-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-card);
+  /* [local extension] 다크에서 밝은 스크린샷이 눈부시지 않게 한다.
+     프로필 사진에는 적용하지 않는다. */
+  filter: var(--content-image-filter);
+}
+
+.prose-body figcaption {
+  margin-top: var(--spacing-ext-2);
+  font-size: var(--text-small);
+  line-height: var(--text-small--line-height);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.prose-body hr {
+  border: none;
+  border-top: 1px solid var(--hairline);
+  margin-block: var(--spacing-ext-8);
+}
+
+/* ---------- 수식 (KaTeX) ---------- */
+
+/* 블록 수식은 가로 스크롤을 허용하되 페이지를 밀지 않는다 */
+.prose-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: var(--spacing-ext-1);
+}
+
+.prose-body .katex {
+  font-size: 1em; /* 본문과 동일 크기 */
+}

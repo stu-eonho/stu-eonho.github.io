@@ -1,0 +1,96 @@
+---
+import { Icon } from 'astro-icon/components';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 3상태 테마 토글: system → light → dark → system.
+ *
+ * CRITICAL: 3상태이므로 boolean인 aria-pressed가 부적절하다.
+ * 현재 상태를 aria-label("테마: 시스템 / 라이트 / 다크")로 알린다.
+ *
+ * CRITICAL: JS가 실행되지 않으면 버튼을 렌더링하지 않는다(hidden 유지).
+ * 이 경우 사이트는 prefers-color-scheme만 따른다.
+ *
+ * CRITICAL: 상태 문구는 data-* 속성으로 서버에서 실어 보낸다. 스크립트 안에 사전을 두면
+ * 한국어와 영어 문자열이 양쪽 빌드에 모두 실리고, 잘못된 언어가 나갈 여지도 생긴다.
+ */
+const { t } = i18n(Astro.url);
+---
+
+<button
+  type="button"
+  class="icon-button theme-toggle"
+  id="theme-toggle"
+  aria-label={t.theme.system}
+  data-label-system={t.theme.system}
+  data-label-light={t.theme.light}
+  data-label-dark={t.theme.dark}
+  hidden
+>
+  <span data-theme-icon="system"><Icon name="lucide:sun-moon" aria-hidden="true" /></span>
+  <span data-theme-icon="light" hidden><Icon name="lucide:sun" aria-hidden="true" /></span>
+  <span data-theme-icon="dark" hidden><Icon name="lucide:moon" aria-hidden="true" /></span>
+</button>
+
+<script>
+  type ThemeChoice = 'system' | 'light' | 'dark';
+
+  const ORDER: ThemeChoice[] = ['system', 'light', 'dark'];
+
+  const button = document.getElementById('theme-toggle');
+  if (button) {
+    // 문구는 서버가 현재 언어로 렌더한 data-* 속성에서 읽는다.
+    const LABEL: Record<ThemeChoice, string> = {
+      system: button.dataset.labelSystem ?? '',
+      light: button.dataset.labelLight ?? '',
+      dark: button.dataset.labelDark ?? '',
+    };
+
+    // JS가 살아 있을 때만 토글을 노출한다.
+    button.removeAttribute('hidden');
+
+    const read = (): ThemeChoice => {
+      try {
+        const stored = localStorage.getItem('theme');
+        return stored === 'light' || stored === 'dark' ? stored : 'system';
+      } catch {
+        return 'system';
+      }
+    };
+
+    const apply = (choice: ThemeChoice): void => {
+      if (choice === 'system') {
+        document.documentElement.removeAttribute('data-theme');
+        try {
+          localStorage.removeItem('theme');
+        } catch {
+          /* 저장 실패는 무시한다 — 이번 세션에만 적용된다 */
+        }
+      } else {
+        document.documentElement.setAttribute('data-theme', choice);
+        try {
+          localStorage.setItem('theme', choice);
+        } catch {
+          /* 위와 동일 */
+        }
+      }
+      button.setAttribute('aria-label', LABEL[choice]);
+      for (const icon of button.querySelectorAll<HTMLElement>('[data-theme-icon]')) {
+        icon.toggleAttribute('hidden', icon.dataset.themeIcon !== choice);
+      }
+    };
+
+    apply(read());
+
+    button.addEventListener('click', () => {
+      const next = ORDER[(ORDER.indexOf(read()) + 1) % ORDER.length]!;
+      apply(next);
+    });
+
+    // system 상태에서는 OS 설정 변화를 실시간으로 반영한다.
+    // (data-theme 속성이 없으면 CSS 미디어 쿼리가 알아서 따라가므로 재적용만 해 준다.)
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (read() === 'system') apply('system');
+    });
+  }
+</script>

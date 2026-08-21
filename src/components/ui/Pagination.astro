@@ -1,0 +1,44 @@
+---
+import Button from './Button.astro';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 페이지네이션.
+ * CRITICAL: 전체가 1페이지면 이 컴포넌트를 렌더링하지 않는다(호출부에서 판단).
+ * 없는 방향의 버튼은 제거하지 않고 비활성으로 남겨 레이아웃이 흔들리지 않게 한다.
+ */
+interface Props {
+  current: number;
+  total: number;
+  prevUrl: string | null;
+  nextUrl: string | null;
+}
+
+const { current, total, prevUrl, nextUrl } = Astro.props;
+const { t } = i18n(Astro.url);
+---
+
+<nav class="pagination" aria-label={t.pagination.label}>
+  <Button variant="compact-outline" href={prevUrl ?? undefined} disabled={!prevUrl}>
+    {t.pagination.prev}
+  </Button>
+  <span class="meta-text page-indicator" aria-current="page">{current} / {total}</span>
+  <Button variant="compact-outline" href={nextUrl ?? undefined} disabled={!nextUrl}>
+    {t.pagination.next}
+  </Button>
+</nav>
+
+<style>
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-ext-3);
+    margin-top: var(--spacing-ext-8); /* 40px */
+  }
+
+  .page-indicator {
+    min-width: 64px;
+    text-align: center;
+  }
+</style>

@@ -1,0 +1,25 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import type { SeoInput } from '@/lib/seo';
+
+/**
+ * 목록형 페이지(카테고리 / 아카이브 / 태그) 공통 셸.
+ * `lang`은 BaseLayout이 Astro.url에서 파생한다 — `path`는 언어 접두사 없는 정규 경로다.
+ */
+interface Props extends Omit<SeoInput, 'lang'> {}
+
+const props = Astro.props;
+---
+
+<BaseLayout {...props}>
+  <div class="container list-shell">
+    <slot />
+  </div>
+</BaseLayout>
+
+<style>
+  .list-shell {
+    padding-top: var(--spacing-ext-9); /* 56px */
+    padding-bottom: var(--spacing-ext-10);
+  }
+</style>

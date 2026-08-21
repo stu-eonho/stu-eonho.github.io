@@ -1,0 +1,18 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# environment — CRITICAL: 정적 빌드이므로 비밀 값을 여기 두지 않는다
+.env
+.env.local
+.env.*.local
+
+# logs / os
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# 오케스트레이션 산출물은 보존한다 (_workspace/)

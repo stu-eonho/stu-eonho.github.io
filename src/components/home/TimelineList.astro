@@ -1,0 +1,107 @@
+---
+import { formatYearMonthString } from '@/lib/date';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 학적·경력이 공유하는 타임라인.
+ * 좌측 8px 원형 마커 + 1px 세로 연결선. 진행 중인 항목은 마커 배색이 달라지지만,
+ * CRITICAL: 색상만으로 전달하지 않는다 — 기간 표기에 "현재"가 함께 나온다.
+ */
+export interface TimelineEntry {
+  /** 1행. 예: "OO대학교 · 컴퓨터공학과" */
+  title: string;
+  /** 2행 앞부분. 예: "학사", "연구 인턴 · 정규직" */
+  kind: string;
+  /** "YYYY-MM" */
+  startDate: string;
+  /** "YYYY-MM" 또는 진행 중이면 null */
+  endDate: string | null;
+  /** 3행. 비우면 줄 자체가 나오지 않는다 */
+  detail?: string;
+}
+
+interface Props {
+  entries: TimelineEntry[];
+}
+
+const { entries } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+---
+
+<ol class="timeline" data-reveal-group>
+  {
+    entries.map((entry) => (
+      <li class:list={['entry', { current: entry.endDate === null }]} data-reveal>
+        <span class="marker" aria-hidden="true" />
+        <p class="entry-title">{entry.title}</p>
+        <p class="meta-text">
+          {entry.kind} · {formatYearMonthString(entry.startDate, lang)} –{' '}
+          {entry.endDate === null ? t.profile.present : formatYearMonthString(entry.endDate, lang)}
+        </p>
+        {entry.detail && <p class="entry-detail">{entry.detail}</p>}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .timeline {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-6); /* 24px */
+  }
+
+  .entry {
+    position: relative;
+    padding-left: var(--spacing-ext-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-1);
+  }
+
+  /* 세로 연결선 */
+  .entry::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 14px;
+    bottom: calc(var(--spacing-ext-6) * -1);
+    width: 1px;
+    background: var(--hairline-strong);
+  }
+
+  .entry:last-child::before {
+    display: none;
+  }
+
+  /* 8px 원형 마커 */
+  .marker {
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--fg-muted);
+  }
+
+  .entry.current .marker {
+    background: var(--accent);
+    outline: 2px solid var(--marker-ring);
+  }
+
+  .entry-title {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .entry-detail {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    color: var(--fg-secondary);
+  }
+</style>

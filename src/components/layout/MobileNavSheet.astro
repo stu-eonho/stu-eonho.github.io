@@ -1,0 +1,245 @@
+---
+import { i18n } from '@/config/i18n';
+
+/**
+ * 모바일 내비게이션 시트 (768px 미만).
+ *
+ * 헤더 아래에서 아래로 펼쳐지는 전체 폭 시트. Dialog 규격을 따른다:
+ * 포커스 트랩, Escape 닫기, body 스크롤 잠금, 닫힌 뒤 트리거로 포커스 복귀.
+ *
+ * CRITICAL: JS 실패 시에도 카테고리로 이동할 수 있어야 한다.
+ * 아래 `mobile-nav-fallback`(details 요소)이 기본으로 보이며,
+ * SiteHeader의 스크립트가 실행되면 그때 숨겨지고 햄버거 버튼이 노출된다.
+ */
+interface NavItem {
+  href: string;
+  label: string;
+  active: boolean;
+}
+
+interface Props {
+  items: NavItem[];
+}
+
+const { items } = Astro.props;
+const { t } = i18n(Astro.url);
+---
+
+<div class="sheet-overlay" id="mobile-nav-overlay" hidden></div>
+
+<div
+  class="sheet"
+  id="mobile-nav-sheet"
+  role="dialog"
+  aria-modal="true"
+  aria-label={t.nav.sheetLabel}
+  hidden
+>
+  <nav aria-label={t.nav.mobileLabel}>
+    <ul class="sheet-list">
+      {
+        items.map((item) => (
+          <li>
+            <a
+              class:list={['sheet-link', { active: item.active }]}
+              href={item.href}
+              aria-current={item.active ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</div>
+
+{/* JS 없이도 동작하는 폴백 내비 */}
+<details class="nav-fallback" id="mobile-nav-fallback">
+  <summary>{t.nav.menu}</summary>
+  <nav aria-label={t.nav.fallbackLabel}>
+    <ul class="sheet-list">
+      {
+        items.map((item) => (
+          <li>
+            <a
+              class:list={['sheet-link', { active: item.active }]}
+              href={item.href}
+              aria-current={item.active ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</details>
+
+<script>
+  const trigger = document.getElementById('mobile-nav-trigger');
+  const sheet = document.getElementById('mobile-nav-sheet');
+  const overlay = document.getElementById('mobile-nav-overlay');
+
+  if (trigger && sheet && overlay) {
+    // 문구는 SiteHeader가 현재 언어로 렌더한 트리거의 data-* 속성에서 읽는다.
+    const LABEL_OPEN = trigger.dataset.labelOpen ?? '';
+    const LABEL_CLOSE = trigger.dataset.labelClose ?? '';
+    const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])';
+    let isOpen = false;
+
+    const focusables = (): HTMLElement[] =>
+      Array.from(sheet.querySelectorAll<HTMLElement>(FOCUSABLE));
+
+    const open = (): void => {
+      isOpen = true;
+      sheet.removeAttribute('hidden');
+      overlay.removeAttribute('hidden');
+      sheet.classList.add('sheet-animate');
+      trigger.setAttribute('aria-expanded', 'true');
+      trigger.setAttribute('aria-label', LABEL_CLOSE);
+      document.body.style.overflow = 'hidden';
+      focusables()[0]?.focus();
+    };
+
+    const close = (): void => {
+      isOpen = false;
+      sheet.setAttribute('hidden', '');
+      overlay.setAttribute('hidden', '');
+      sheet.classList.remove('sheet-animate');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-label', LABEL_OPEN);
+      document.body.style.overflow = '';
+      // 닫힌 뒤 포커스를 트리거로 되돌린다.
+      trigger.focus();
+    };
+
+    trigger.addEventListener('click', () => (isOpen ? close() : open()));
+    overlay.addEventListener('click', close);
+
+    document.addEventListener('keydown', (event) => {
+      if (!isOpen) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+        return;
+      }
+
+      // 포커스 트랩 — 시트 밖으로 나가지 않게 한다.
+      if (event.key === 'Tab') {
+        const items = focusables();
+        if (items.length === 0) return;
+        const first = items[0]!;
+        const last = items[items.length - 1]!;
+        const active = document.activeElement;
+
+        if (event.shiftKey && (active === first || !sheet.contains(active))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    // 데스크톱 폭으로 넓어지면 시트를 닫는다 (스크롤 잠금이 남지 않게).
+    window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => {
+      if (event.matches && isOpen) close();
+    });
+  }
+</script>
+
+<style>
+  .sheet-overlay {
+    position: fixed;
+    inset: var(--header-height) 0 0 0;
+    z-index: 40;
+    background: var(--overlay); /* [local extension] */
+  }
+
+  .sheet {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    z-index: 45;
+    /* 불투명 — 시트가 열리면 시트 가독성이 우선이다 */
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+    max-height: calc(100dvh - var(--header-height));
+    overflow-y: auto;
+  }
+
+  .sheet-list {
+    list-style: none;
+  }
+
+  .sheet-link {
+    display: flex;
+    align-items: center;
+    height: 56px;
+    padding-inline: 22px;
+    font-size: var(--text-card); /* 20px / 400 */
+    line-height: var(--text-card--line-height);
+    font-weight: 400;
+    color: var(--fg-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .sheet-list li:last-child .sheet-link {
+    border-bottom: none;
+  }
+
+  .sheet-link {
+    position: relative;
+  }
+
+  /* CRITICAL: 선택 상태를 색상만으로 표시하지 않는다 — 좌측 바를 함께 둔다.
+     깊이 표현이 아니므로 box-shadow가 아니라 실제 요소로 그린다. */
+  .sheet-link.active {
+    color: var(--fg);
+  }
+
+  .sheet-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+
+  /* ---------- JS 없는 환경의 폴백 ---------- */
+  .nav-fallback {
+    display: none;
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .nav-fallback > summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 22px;
+    font-size: var(--text-body);
+    color: var(--fg);
+    cursor: pointer;
+  }
+
+  @media (max-width: 767px) {
+    .nav-fallback:not([hidden]) {
+      display: block;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .sheet,
+    .sheet-overlay {
+      display: none;
+    }
+  }
+</style>

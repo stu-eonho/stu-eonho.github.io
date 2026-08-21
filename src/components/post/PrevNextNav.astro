@@ -1,0 +1,81 @@
+---
+import Card from '@/components/ui/Card.astro';
+import { postHref, type Siblings } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 같은 카테고리 내 이전/다음 글.
+ * CRITICAL: 한쪽이 없어도 열 구조는 유지한다 — 레이아웃이 흔들리지 않게 빈 칸을 남긴다.
+ * CRITICAL: 글 상세는 이 블록에서 끝난다. 댓글·구독·공유 블록을 두지 않는다.
+ */
+interface Props {
+  siblings: Siblings;
+}
+
+const { siblings } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+---
+
+{
+  (siblings.prev || siblings.next) && (
+    <nav class="prev-next" aria-label={t.post.prevNextLabel}>
+      <div class="slot">
+        {siblings.prev && (
+          <Card href={postHref(siblings.prev, lang)} interactive class="nav-card">
+            <p class="meta-text label">{t.post.prevPost}</p>
+            <p class="title clamp-2">{siblings.prev.data.title}</p>
+          </Card>
+        )}
+      </div>
+      <div class="slot">
+        {siblings.next && (
+          <Card href={postHref(siblings.next, lang)} interactive class="nav-card align-end">
+            <p class="meta-text label">{t.post.nextPost}</p>
+            <p class="title clamp-2">{siblings.next.data.title}</p>
+          </Card>
+        )}
+      </div>
+    </nav>
+  )
+}
+
+<style>
+  .prev-next {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-content);
+    margin-top: var(--spacing-ext-9); /* 56px */
+  }
+
+  @media (min-width: 640px) {
+    .prev-next {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .slot {
+    min-height: 0;
+  }
+
+  .prev-next :global(.nav-card) {
+    height: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .prev-next :global(.align-end) {
+      text-align: right;
+    }
+  }
+
+  .label {
+    margin: 0 0 var(--spacing-ext-1);
+  }
+
+  .title {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: 600;
+    color: var(--fg);
+    margin: 0;
+  }
+</style>

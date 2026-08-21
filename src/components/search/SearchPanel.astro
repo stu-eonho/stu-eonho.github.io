@@ -1,0 +1,375 @@
+---
+import { Icon } from 'astro-icon/components';
+import Button from '@/components/ui/Button.astro';
+import { i18n } from '@/config/i18n';
+
+/**
+ * Pagefind 검색 패널.
+ *
+ * CRITICAL: 인덱스는 첫 키 입력 시점에 동적 import 한다. 초기 페이지 로드에 포함하지 않는다.
+ * CRITICAL: 검색어를 DOM에 넣을 때 textContent를 쓴다.
+ *   Pagefind가 반환하는 하이라이트 마크업만 예외로 innerHTML을 허용한다.
+ * CRITICAL: 인덱스는 프로덕션 빌드 산출물에만 존재한다 — dev 서버에서는 검증할 수 없다.
+ *
+ * CRITICAL: 상태 문구는 data-* 속성으로 서버에서 실어 보낸다. 스크립트에 사전을 두면
+ * 두 언어 문자열이 모두 번들에 실린다.
+ *
+ * Pagefind는 `<html lang>`을 보고 언어별 인덱스를 따로 만든다. 그래서 `/search`는 한국어
+ * 페이지를, `/en/search`는 영어 페이지를 각각 찾는다 — 별도 설정이 필요 없다.
+ */
+const { t, href } = i18n(Astro.url);
+---
+
+<div
+  class="search-panel"
+  data-msg-prompt={t.search.prompt}
+  data-msg-searching={t.search.searching}
+  data-msg-load-failed={t.search.loadFailed}
+  data-msg-load-failed-hint={t.search.loadFailedHint}
+  data-msg-result-one={t.search.resultCount(1)}
+  data-msg-result-many={t.search.resultCount(t.search.countPlaceholder)}
+  data-msg-no-results={t.search.noResults(t.search.termPlaceholder)}
+>
+  <label class="visually-hidden" for="search-input">{t.search.inputLabel}</label>
+  <div class="input-wrap">
+    <Icon name="lucide:search" class="input-icon" aria-hidden="true" />
+    <input
+      id="search-input"
+      class="search-input"
+      type="search"
+      autocomplete="off"
+      placeholder={t.search.placeholder}
+      aria-describedby="search-status"
+    />
+  </div>
+
+  <p class="meta-text status" id="search-status" aria-live="polite">{t.search.prompt}</p>
+
+  {/* 로딩 스켈레톤 — 이 사이트의 유일한 무한 루프 애니메이션 */}
+  <div class="skeletons" id="search-skeletons" hidden aria-hidden="true">
+    <div class="skeleton-bar"></div>
+    <div class="skeleton-bar"></div>
+    <div class="skeleton-bar"></div>
+  </div>
+
+  <ul class="results" id="search-results"></ul>
+
+  <div class="more-wrap" id="search-more" hidden>
+    <Button variant="compact-outline" id="search-more-button">{t.search.more}</Button>
+  </div>
+
+  <div class="fallback" id="search-fallback" hidden>
+    <p class="meta-text" id="search-fallback-text"></p>
+    <Button variant="compact-outline" href={href('/archive')}>{t.search.viewArchive}</Button>
+  </div>
+
+  {/* JS 비활성 환경 */}
+  <noscript>
+    <p class="meta-text">
+      {t.search.noscriptBefore}<a href={href('/archive')}>{t.search.noscriptLink}</a>{
+        t.search.noscriptAfter
+      }
+    </p>
+  </noscript>
+</div>
+
+<script>
+  interface PagefindSubResult {
+    excerpt: string;
+    url: string;
+  }
+
+  interface PagefindResultData {
+    url: string;
+    excerpt: string;
+    meta: Record<string, string | undefined>;
+    sub_results?: PagefindSubResult[];
+  }
+
+  interface PagefindResult {
+    id: string;
+    data: () => Promise<PagefindResultData>;
+  }
+
+  interface PagefindApi {
+    search: (term: string) => Promise<{ results: PagefindResult[] }>;
+    options?: (opts: Record<string, unknown>) => Promise<void>;
+  }
+
+  const PAGE_SIZE = 20;
+  const DEBOUNCE_MS = 200;
+
+  const panel = document.querySelector<HTMLElement>('.search-panel');
+  const input = document.getElementById('search-input') as HTMLInputElement | null;
+  const status = document.getElementById('search-status');
+  const list = document.getElementById('search-results');
+  const skeletons = document.getElementById('search-skeletons');
+  const moreWrap = document.getElementById('search-more');
+  const moreButton = document.getElementById('search-more-button');
+  const fallback = document.getElementById('search-fallback');
+  const fallbackText = document.getElementById('search-fallback-text');
+
+  if (
+    panel &&
+    input &&
+    status &&
+    list &&
+    skeletons &&
+    moreWrap &&
+    moreButton &&
+    fallback &&
+    fallbackText
+  ) {
+    // 문구는 서버가 현재 언어로 렌더한 data-* 속성에서 읽는다.
+    const MSG = panel.dataset;
+
+    /**
+     * 단수·복수는 서버가 두 벌의 완성 문장으로 내려 준다. 복수형에는 `{n}` 자리가 있고
+     * 여기서 숫자만 채운다 — 언어별 어순이나 복수 규칙을 스크립트가 알 필요가 없다.
+     */
+    const resultCount = (n: number): string =>
+      n === 1 ? (MSG.msgResultOne ?? '') : (MSG.msgResultMany ?? '').replace('{n}', String(n));
+
+    /** 검색어 자리(`{term}`)를 실제 입력값으로 채운다. */
+    const noResults = (term: string): string => (MSG.msgNoResults ?? '').replace('{term}', term);
+
+    // 페이지 진입 시 입력창 자동 포커스
+    input.focus();
+
+    let pagefind: PagefindApi | null = null;
+    let loadFailed = false;
+    let results: PagefindResult[] = [];
+    let shown = 0;
+    let timer: number | undefined;
+
+    const loadPagefind = async (): Promise<PagefindApi | null> => {
+      if (pagefind || loadFailed) return pagefind;
+      try {
+        // CRITICAL: 첫 입력 시점에만 로드한다. 빌드 산출물의 /pagefind/pagefind.js를 가리킨다.
+        // 경로를 변수에 담아 번들러가 정적으로 해석하지 않게 한다 — 이 파일은 빌드 후에 생긴다.
+        const indexPath = '/pagefind/pagefind.js';
+        pagefind = (await import(/* @vite-ignore */ indexPath)) as PagefindApi;
+        await pagefind.options?.({ excerptLength: 30 });
+        return pagefind;
+      } catch {
+        loadFailed = true;
+        return null;
+      }
+    };
+
+    const reset = (): void => {
+      list.replaceChildren();
+      results = [];
+      shown = 0;
+      moreWrap.hidden = true;
+      fallback.hidden = true;
+    };
+
+    const showFallback = (message: string): void => {
+      fallbackText.textContent = message;
+      fallback.hidden = false;
+    };
+
+    const renderNext = async (): Promise<void> => {
+      const slice = results.slice(shown, shown + PAGE_SIZE);
+      for (const result of slice) {
+        const data = await result.data();
+        const item = document.createElement('li');
+        item.className = 'result';
+
+        const link = document.createElement('a');
+        link.className = 'result-link';
+        link.href = data.url;
+
+        const title = document.createElement('span');
+        title.className = 'result-title';
+        // CRITICAL: textContent — 사용자 입력이나 메타 값을 마크업으로 해석하지 않는다.
+        title.textContent = data.meta.title ?? data.url;
+        link.appendChild(title);
+
+        const metaParts = [data.meta.category, data.meta.date?.slice(0, 10)].filter(Boolean);
+        if (metaParts.length > 0) {
+          const meta = document.createElement('span');
+          meta.className = 'result-meta meta-text';
+          meta.textContent = metaParts.join(' · ');
+          link.appendChild(meta);
+        }
+
+        const excerpt = document.createElement('p');
+        excerpt.className = 'result-excerpt';
+        // 예외: Pagefind가 생성한 <mark> 하이라이트 마크업만 허용한다.
+        excerpt.innerHTML = data.excerpt;
+        link.appendChild(excerpt);
+
+        item.appendChild(link);
+        list.appendChild(item);
+      }
+      shown += slice.length;
+      moreWrap.hidden = shown >= results.length;
+    };
+
+    const run = async (term: string): Promise<void> => {
+      reset();
+
+      if (term.length === 0) {
+        status.textContent = MSG.msgPrompt ?? '';
+        skeletons.hidden = true;
+        return;
+      }
+
+      skeletons.hidden = false;
+      status.textContent = MSG.msgSearching ?? '';
+
+      const api = await loadPagefind();
+      if (!api) {
+        skeletons.hidden = true;
+        status.textContent = MSG.msgLoadFailed ?? '';
+        showFallback(MSG.msgLoadFailedHint ?? '');
+        return;
+      }
+
+      const response = await api.search(term);
+      skeletons.hidden = true;
+      results = response.results;
+
+      if (results.length === 0) {
+        // 결과 0건은 에러가 아니라 정상 상태다.
+        status.textContent = resultCount(0);
+        // CRITICAL: 검색어는 textContent로만 다룬다 — showFallback도 textContent로 심는다.
+        showFallback(noResults(term));
+        return;
+      }
+
+      status.textContent = resultCount(results.length);
+      await renderNext();
+    };
+
+    input.addEventListener('input', () => {
+      window.clearTimeout(timer);
+      const term = input.value.trim();
+      timer = window.setTimeout(() => void run(term), DEBOUNCE_MS);
+    });
+
+    // Escape: 검색 입력 내용 지우기
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && input.value !== '') {
+        event.preventDefault();
+        input.value = '';
+        void run('');
+      }
+    });
+
+    moreButton.addEventListener('click', () => void renderNext());
+  }
+</script>
+
+<style>
+  .search-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-4);
+  }
+
+  .input-wrap {
+    position: relative;
+    max-width: var(--prose-max);
+  }
+
+  .input-wrap :global(.input-icon) {
+    position: absolute;
+    left: var(--spacing-content); /* 20px */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: var(--fg-muted);
+    stroke-width: 1.5;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    height: 48px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    border: 1px solid var(--hairline-strong);
+    padding-left: 48px;
+    padding-right: var(--spacing-content);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--fg);
+  }
+
+  /* CRITICAL: placeholder도 4.5:1 대비를 지켜야 하므로 이보다 옅은 색을 쓰지 않는다 */
+  .search-input::placeholder {
+    color: var(--fg-muted);
+  }
+
+  .search-input:focus {
+    border-color: var(--accent);
+  }
+
+  .search-input:focus-visible {
+    outline: 2px solid var(--focus-ring-soft);
+    outline-offset: 2px;
+  }
+
+  .status {
+    margin: 0;
+  }
+
+  .skeletons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-3);
+    max-width: var(--prose-max);
+  }
+
+  .results {
+    list-style: none;
+    max-width: var(--prose-max);
+  }
+
+  .results :global(.result) {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .results :global(.result-link) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-1);
+    min-height: 44px;
+    padding-block: var(--spacing-ext-3);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .results :global(.result-title) {
+    font-size: var(--text-card);
+    line-height: var(--text-card--line-height);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .results :global(.result-excerpt) {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    color: var(--fg-secondary);
+    margin: 0;
+  }
+
+  /* Pagefind 하이라이트 — 배경만 바꾸고 텍스트 색은 유지한다 */
+  .results :global(mark) {
+    background: var(--search-highlight);
+    color: inherit;
+    border-radius: var(--radius-control);
+    padding: 0 2px;
+  }
+
+  .fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-ext-3);
+  }
+</style>

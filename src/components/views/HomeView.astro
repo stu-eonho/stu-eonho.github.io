@@ -1,0 +1,65 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProfileCard from '@/components/home/ProfileCard.astro';
+import RecentPosts from '@/components/home/RecentPosts.astro';
+import { SITE } from '@/config/site';
+import { getPublishedPosts, postsForLang } from '@/lib/posts';
+import { personJsonLd } from '@/lib/seo';
+import { collectPlaceholderFields } from '@/config/profile';
+import { DEFAULT_LANG, i18n } from '@/config/i18n';
+
+/**
+ * 홈 = CV 한 장 + 최근 글.
+ * 프로필 관련 내용은 전부 ProfileCard 하나에 모인다. 섹션을 페이지에 흩뿌리지 않는다.
+ *
+ * `/`와 `/en`이 이 컴포넌트를 공유한다. 언어는 Astro.url에서 파생되므로 props가 없다.
+ */
+const { lang } = i18n(Astro.url);
+const posts = postsForLang(await getPublishedPosts(), lang).slice(0, SITE.recentPostsOnHome);
+
+/**
+ * 미기입 프로필 경고.
+ * CRITICAL: 경고이지 에러가 아니다. 종료 코드에 영향을 주지 않으며 배포를 막지 않는다.
+ * 언어마다 한 번씩 나오면 같은 경고가 두 번 찍히므로 기본 언어 빌드에서만 낸다.
+ */
+if (lang === DEFAULT_LANG) {
+  const missing = collectPlaceholderFields();
+  if (missing.length > 0) {
+    console.warn(
+      `[profile] profile.ts에 미기입 항목 ${missing.length}개가 남아 있습니다 (${missing.join(', ')})`,
+    );
+  }
+}
+---
+
+<BaseLayout path="/" jsonLd={personJsonLd(lang)}>
+  <div class="container home">
+    <ProfileCard />
+    <div class="recent">
+      <RecentPosts posts={posts} />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .home {
+    padding-top: var(--spacing-ext-8); /* 40px */
+    padding-bottom: var(--spacing-ext-10);
+  }
+
+  @media (min-width: 768px) {
+    .home {
+      padding-top: var(--spacing-ext-9); /* 56px — sticky 헤더에 카드가 붙어 보이지 않게 */
+    }
+  }
+
+  .recent {
+    margin-top: var(--spacing-ext-10); /* 80px */
+  }
+
+  @media (min-width: 768px) {
+    .recent {
+      margin-top: var(--spacing-ext-11); /* 120px — 페이지의 두 덩어리를 확실히 갈라 준다 */
+    }
+  }
+</style>

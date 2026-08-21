@@ -1,0 +1,161 @@
+---
+/**
+ * 버튼 프리미티브.
+ *
+ * CRITICAL: 44px과 36px을 하나의 기본값으로 합치지 않는다.
+ *   44px — 히어로/주요 CTA (primary, outline)
+ *   36px — 카드·메타 패널 내부 보조 액션 (compact, compact-outline)
+ *
+ * `href`가 있으면 `<a>`, 없으면 `<button>`으로 렌더링한다.
+ */
+export type ButtonVariant = 'primary' | 'outline' | 'compact' | 'compact-outline';
+
+interface Props {
+  variant?: ButtonVariant;
+  href?: string;
+  /** 새 탭으로 열 외부 링크 여부. true면 rel="noopener noreferrer"가 함께 붙는다 */
+  external?: boolean;
+  type?: 'button' | 'submit';
+  /** 비활성 표시. 포커스 대상에서 제외되고 aria-disabled가 붙는다 */
+  disabled?: boolean;
+  /** 480px 미만에서 전체 폭으로 늘릴지 */
+  fullWidthMobile?: boolean;
+  class?: string;
+  'aria-label'?: string;
+  id?: string;
+}
+
+const {
+  variant = 'primary',
+  href,
+  external = false,
+  type = 'button',
+  disabled = false,
+  fullWidthMobile = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const classes = ['btn', `btn-${variant}`, fullWidthMobile && 'btn-full-mobile', className]
+  .filter(Boolean)
+  .join(' ');
+
+const externalAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+
+{
+  href && !disabled ? (
+    <a href={href} class={classes} {...externalAttrs} {...rest}>
+      <slot />
+    </a>
+  ) : href && disabled ? (
+    // 비활성 링크는 포커스 대상에서 제외한다 (tabindex 없음 + aria-disabled)
+    <span class={classes} aria-disabled="true" {...rest}>
+      <slot />
+    </span>
+  ) : (
+    <button type={type} class={classes} disabled={disabled} aria-disabled={disabled} {...rest}>
+      <slot />
+    </button>
+  )
+}
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-compact);
+    border-radius: var(--radius-pill); /* [verified] marketing-pill */
+    font-family: var(--font-text);
+    font-weight: 400;
+    white-space: nowrap;
+    text-decoration: none;
+    /* CRITICAL: press에 transform: scale()을 쓰지 않는다 — pill 형태에서 왜곡이 눈에 띈다 */
+    transition:
+      background-color var(--duration-micro) var(--ease-standard),
+      border-color var(--duration-micro) var(--ease-standard),
+      color var(--duration-micro) var(--ease-standard);
+  }
+
+  /* ---------- primary [verified] marketing-primary ---------- */
+  .btn-primary {
+    height: 44px;
+    padding: var(--spacing-pill-block) var(--spacing-pill-inline); /* 11px 21px */
+    font-size: var(--text-body); /* 17px / 400 */
+    line-height: var(--text-body--line-height);
+    background: var(--accent);
+    color: var(--accent-on);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+
+  .btn-primary:active {
+    background: var(--accent-active);
+  }
+
+  /* ---------- outline [verified] marketing-outline ---------- */
+  .btn-outline {
+    height: 44px;
+    padding: var(--spacing-pill-block) var(--spacing-pill-inline);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    background: transparent;
+    /* CRITICAL: --link(#0066cc)를 채움 배경색으로 쓰지 않는다. 텍스트/테두리 전용. */
+    color: var(--link);
+    border: 1px solid var(--link);
+  }
+
+  .btn-outline:hover {
+    background: var(--outline-hover-tint); /* [local extension] */
+  }
+
+  /* ---------- compact [verified] marketing-compact ---------- */
+  .btn-compact {
+    height: 36px;
+    padding: var(--spacing-compact) var(--spacing-control-inline); /* 8px 15px */
+    font-size: var(--text-small); /* 14px / 400 */
+    line-height: 1;
+    background: var(--accent);
+    color: var(--accent-on);
+  }
+
+  .btn-compact:hover {
+    background: var(--accent-hover);
+  }
+
+  /* ---------- compact-outline [local extension] ----------
+     compact 지오메트리에 outline 배색. 논문/프로젝트 링크 버튼과 페이지네이션에 쓴다. */
+  .btn-compact-outline {
+    height: 36px;
+    padding: var(--spacing-compact) var(--spacing-control-inline);
+    font-size: var(--text-small);
+    line-height: 1;
+    background: transparent;
+    color: var(--link);
+    border: 1px solid var(--link);
+  }
+
+  .btn-compact-outline:hover {
+    background: var(--outline-hover-tint);
+  }
+
+  /* ---------- disabled [local extension] ---------- */
+  .btn[aria-disabled='true'],
+  .btn:disabled {
+    background: var(--disabled-fill);
+    color: var(--disabled-fg);
+    border-color: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ---------- 모바일 전체 폭 ---------- */
+  @media (max-width: 479px) {
+    .btn-full-mobile {
+      width: 100%;
+    }
+  }
+</style>

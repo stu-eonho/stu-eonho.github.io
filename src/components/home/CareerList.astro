@@ -1,0 +1,34 @@
+---
+import TimelineList, { type TimelineEntry } from './TimelineList.astro';
+import { PROFILE, isPlaceholder } from '@/config/profile';
+import { i18n, text, type MaybeLocalized } from '@/config/i18n';
+
+/** CRITICAL: 항목이 0개면 섹션 전체를 렌더링하지 않는다. 경력이 없는 사용자를 위한 기본 상태다. */
+const { lang, t } = i18n(Astro.url);
+
+const show = (value: MaybeLocalized | undefined): string | undefined => {
+  const resolved = text(value, lang);
+  return resolved && !isPlaceholder(resolved) ? resolved : undefined;
+};
+
+const entries: TimelineEntry[] = PROFILE.career.map((entry) => ({
+  title: [text(entry.company, lang), show(entry.team)].filter(Boolean).join(' · '),
+  kind: [text(entry.role, lang), entry.employment && t.profile.employment[entry.employment]]
+    .filter(Boolean)
+    .join(' · '),
+  startDate: entry.startDate,
+  endDate: entry.endDate,
+  detail: show(entry.description),
+}));
+---
+
+{
+  entries.length > 0 && (
+    <section class="cv-section" aria-labelledby="career-heading">
+      <h2 class="cv-heading" id="career-heading">
+        {t.profile.career}
+      </h2>
+      <TimelineList entries={entries} />
+    </section>
+  )
+}

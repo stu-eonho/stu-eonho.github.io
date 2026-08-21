@@ -1,0 +1,67 @@
+---
+import { Icon } from 'astro-icon/components';
+import Button from './Button.astro';
+
+interface Props {
+  /** lucide 아이콘 이름. 예: "lucide:file-question" */
+  icon?: string;
+  title: string;
+  /** 보조 안내 문구 */
+  hint?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+const { icon = 'lucide:file-search', title, hint, ctaLabel, ctaHref } = Astro.props;
+---
+
+<div class="empty">
+  <Icon name={icon} class="empty-icon" aria-hidden="true" />
+  <p class="empty-title">{title}</p>
+  {hint && <p class="empty-hint">{hint}</p>}
+  {
+    ctaLabel && ctaHref && (
+      <div class="empty-cta">
+        <Button variant="compact-outline" href={ctaHref}>
+          {ctaLabel}
+        </Button>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-block: var(--spacing-ext-10);
+    gap: var(--spacing-ext-3);
+  }
+
+  .empty-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--fg-muted);
+    stroke-width: 1.5;
+  }
+
+  .empty-title {
+    font-size: var(--text-card);
+    line-height: var(--text-card--line-height);
+    font-weight: 400;
+    color: var(--fg);
+  }
+
+  .empty-hint {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    color: var(--fg-muted);
+    max-width: 480px;
+  }
+
+  .empty-cta {
+    margin-top: var(--spacing-ext-2);
+  }
+</style>

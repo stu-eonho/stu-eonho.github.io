@@ -1,0 +1,144 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Badge from '@/components/ui/Badge.astro';
+import { formatYearMonthString } from '@/lib/date';
+import type { Post } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 프로젝트 글의 부가 정보 패널.
+ *
+ * CRITICAL: 상태를 색상만으로 전달하지 않는다 — 배지에 라벨 텍스트를 함께 넣는다.
+ * CRITICAL: 성공/경고/위험을 뜻하는 빨강·초록·주황을 쓰지 않는다.
+ */
+interface Props {
+  project: NonNullable<Post['data']['project']>;
+}
+
+const { project } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+
+// in-progress만 accent tint, 나머지는 중립 배지
+const statusTone = project.status === 'in-progress' ? 'accent' : 'neutral';
+
+const periodText = `${formatYearMonthString(project.period.start, lang)} – ${
+  project.period.end ? formatYearMonthString(project.period.end, lang) : t.project.ongoing
+}`;
+
+const links = [
+  project.repoUrl && { label: 'Repository', href: project.repoUrl },
+  project.demoUrl && { label: 'Demo', href: project.demoUrl },
+].filter((link): link is { label: string; href: string } => Boolean(link));
+---
+
+<section
+  class="meta-panel"
+  aria-label={t.project.panelLabel}
+  data-reveal-onload
+  style="--reveal-i: 1"
+>
+  <p class="eyebrow">{t.project.eyebrow}</p>
+
+  <dl class="fields">
+    <div class="field">
+      <dt class="meta-text">{t.project.period}</dt>
+      <dd class="value">{periodText}</dd>
+    </div>
+    <div class="field">
+      <dt class="meta-text">{t.project.role}</dt>
+      <dd class="value">{project.role}</dd>
+    </div>
+    {
+      project.teamSize !== undefined && (
+        <div class="field">
+          <dt class="meta-text">{t.project.teamSize}</dt>
+          <dd class="value">{t.project.people(project.teamSize)}</dd>
+        </div>
+      )
+    }
+    <div class="field">
+      <dt class="meta-text">{t.project.status}</dt>
+      <dd class="value">
+        <Badge tone={statusTone}>{t.project.statusLabel[project.status]}</Badge>
+      </dd>
+    </div>
+  </dl>
+
+  <ul class="stack">
+    {
+      project.stack.map((item) => (
+        <li>
+          <Badge tone="chip">{item}</Badge>
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    links.length > 0 && (
+      <div class="links">
+        {links.map((link) => (
+          <Button variant="compact-outline" href={link.href} external>
+            {link.label}
+          </Button>
+        ))}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .meta-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-3);
+    background: var(--panel);
+    border-radius: var(--radius-card);
+    padding: var(--spacing-content);
+    margin-top: var(--spacing-ext-7);
+  }
+
+  /* 640px 미만은 1열 */
+  .fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-ext-3);
+    margin: 0;
+  }
+
+  @media (min-width: 640px) {
+    .fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-1);
+  }
+
+  .field dt {
+    margin: 0;
+  }
+
+  .value {
+    margin: 0;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--fg);
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-ext-2);
+    list-style: none;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-ext-2);
+  }
+</style>

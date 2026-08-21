@@ -1,0 +1,36 @@
+---
+import Badge from '@/components/ui/Badge.astro';
+import { PROFILE } from '@/config/profile';
+import { i18n, textList } from '@/config/i18n';
+
+/** CRITICAL: interests가 비면 섹션 전체를 렌더링하지 않는다. 최대 8개까지 노출한다. */
+const { lang, t } = i18n(Astro.url);
+const interests = textList(PROFILE.interests.slice(0, 8), lang);
+---
+
+{
+  interests.length > 0 && (
+    <section class="cv-section" aria-labelledby="interests-heading">
+      <h2 class="cv-heading" id="interests-heading">
+        {t.profile.interests}
+      </h2>
+
+      <ul class="chips" data-reveal>
+        {interests.map((item) => (
+          <li>
+            <Badge tone="interest">{item}</Badge>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-ext-2);
+    list-style: none;
+  }
+</style>

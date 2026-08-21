@@ -1,0 +1,31 @@
+---
+import type { GetStaticPaths } from 'astro';
+import TagDetailView from '@/components/views/TagDetailView.astro';
+import { getPublishedPosts, postsForLang, type Post } from '@/lib/posts';
+import { collectTags } from '@/lib/tags';
+
+/**
+ * 태그 상세.
+ * CRITICAL: getStaticPaths가 생성한 태그만 유효하다. 존재하지 않는 slug는 404로 떨어진다.
+ * CRITICAL: 태그 집계는 **이 언어 화면에 실제로 걸리는 글** 기준이다. 전체 글로 집계하면
+ * 목록에 없는 글이 태그 상세에 나타난다.
+ * 페이지네이션은 두지 않는다 (태그당 글 수가 적다는 가정 — 전체 200편 초과 시 재검토).
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+  const tags = collectTags(postsForLang(await getPublishedPosts(), 'ko'));
+  return tags.map((tag) => ({
+    params: { tag: tag.slug },
+    props: { label: tag.label, posts: tag.posts },
+  }));
+};
+
+interface Props {
+  label: string;
+  posts: Post[];
+}
+
+const { tag } = Astro.params;
+const { label, posts } = Astro.props as Props;
+---
+
+<TagDetailView slug={tag!} label={label} posts={posts} />

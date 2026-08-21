@@ -1,0 +1,68 @@
+---
+import Badge from '@/components/ui/Badge.astro';
+import { PROFILE } from '@/config/profile';
+import { i18n, text, textList } from '@/config/i18n';
+
+/** CRITICAL: skillGroups가 비면 섹션 전체를 렌더링하지 않는다. */
+const { lang, t } = i18n(Astro.url);
+const groups = PROFILE.skillGroups.map((group) => ({
+  name: text(group.name, lang),
+  items: textList(group.items, lang),
+}));
+---
+
+{
+  groups.length > 0 && (
+    <section class="cv-section" aria-labelledby="skills-heading">
+      <h2 class="cv-heading" id="skills-heading">
+        {t.profile.skills}
+      </h2>
+
+      <div class="groups" data-reveal-group>
+        {groups.map((group) => (
+          <div class="group" data-reveal>
+            <p class="eyebrow">{group.name}</p>
+            <ul class="chips">
+              {group.items.map((item) => (
+                <li>
+                  <Badge tone="chip">{item}</Badge>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-5); /* 20px */
+  }
+
+  .group {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-ext-2);
+  }
+
+  /* 640px 이상에서는 그룹명이 왼쪽 고정 폭 컬럼으로 빠져 CV처럼 정렬된다 */
+  @media (min-width: 640px) {
+    .group {
+      grid-template-columns: 120px minmax(0, 1fr);
+      align-items: baseline;
+      gap: var(--spacing-ext-4);
+    }
+  }
+
+  /* CRITICAL: 칩은 링크가 아니다. 커서 기본값을 유지하고 hover 효과를 주지 않는다. */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-ext-2);
+    list-style: none;
+  }
+</style>

@@ -1,0 +1,256 @@
+---
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import PostMetaHeader from '@/components/post/PostMetaHeader.astro';
+import PaperMetaPanel from '@/components/post/PaperMetaPanel.astro';
+import ProjectMetaPanel from '@/components/post/ProjectMetaPanel.astro';
+import TableOfContents from '@/components/post/TableOfContents.astro';
+import PrevNextNav from '@/components/post/PrevNextNav.astro';
+import TranslationNotice from '@/components/post/TranslationNotice.astro';
+import { getCategory } from '@/config/categories';
+import { articleJsonLd } from '@/lib/seo';
+import { toISODate } from '@/lib/date';
+import { isFallback, type Post, type Siblings } from '@/lib/posts';
+import { i18n, LANG_META } from '@/config/i18n';
+import '@/styles/prose.css';
+
+interface Props {
+  post: Post;
+  headings: MarkdownHeading[];
+  readingTime: number;
+  siblings: Siblings;
+}
+
+const { post, headings, readingTime, siblings } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+const category = getCategory(post.data.category);
+
+// BaseLayout에 넘기는 path는 **언어 접두사가 없는** 정규 경로다.
+const path = `/${post.data.category}/${post.data.slug}`;
+
+/**
+ * 이 언어의 번역본이 없어 원문을 그대로 싣고 있는가.
+ *
+ * CRITICAL: 그런 페이지는 canonical을 원문 언어 쪽으로 넘긴다. 같은 본문이 두 URL에
+ * 있으면 검색엔진이 중복으로 보고 양쪽 평가를 함께 깎는다.
+ */
+const fallback = isFallback(post, lang);
+const contentLang = post.data.lang;
+
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const showToc = post.data.toc && tocHeadings.length >= 2;
+
+const jsonLd = articleJsonLd({
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.date,
+  dateModified: post.data.updated,
+  keywords: post.data.tags,
+  path,
+  lang,
+  contentLang,
+});
+---
+
+<BaseLayout
+  path={path}
+  title={post.data.title}
+  description={post.data.description}
+  type="article"
+  publishedTime={post.data.date}
+  modifiedTime={post.data.updated}
+  tags={post.data.tags}
+  katex={post.data.math}
+  jsonLd={jsonLd}
+  canonicalLang={fallback ? contentLang : undefined}
+>
+  <div class="container post-shell">
+    <article class:list={['post-grid', { 'has-toc': showToc }]}>
+      <div class="post-main">
+        {fallback && <TranslationNotice contentLang={contentLang} />}
+        <PostMetaHeader post={post} readingTime={readingTime} />
+
+        {
+          post.data.paper && category.metaPanel === 'paper' && (
+            <PaperMetaPanel paper={post.data.paper} />
+          )
+        }
+        {
+          post.data.project && category.metaPanel === 'project' && (
+            <ProjectMetaPanel project={post.data.project} />
+          )
+        }
+
+        {
+          showToc && (
+            <div class="toc-mobile-slot">
+              <TableOfContents headings={headings} variant="mobile" />
+            </div>
+          )
+        }
+
+        {
+          /*
+          CRITICAL: 본문 컨테이너에만 data-pagefind-body를 붙인다.
+          헤더·푸터·내비·메타 패널은 인덱싱 대상이 아니다.
+        */
+        }
+        {
+          /*
+          CRITICAL: 본문의 lang은 화면 언어가 아니라 **본문이 실제로 쓰인 언어**다.
+          폴백 표시 중인 한국어 본문에 lang="en"이 붙으면 스크린리더가 한국어를
+          영어 발음 규칙으로 읽는다.
+        */
+        }
+        <div
+          class="prose-body article-body"
+          lang={LANG_META[contentLang].htmlLang}
+          data-pagefind-body
+          data-pagefind-meta={`category:${category.label}`}
+          data-copy={t.post.copy}
+          data-copied={t.post.copied}
+          data-copy-failed={t.post.copyFailed}
+          data-copy-label={t.post.copyLabel}
+          data-anchor-label={t.post.headingAnchor('{heading}')}
+        >
+          <span class="visually-hidden" data-pagefind-meta={`date:${toISODate(post.data.date)}`}
+          ></span>
+          <slot />
+        </div>
+
+        <PrevNextNav siblings={siblings} />
+      </div>
+
+      {
+        showToc && (
+          <aside class="post-aside">
+            <TableOfContents headings={headings} variant="desktop" />
+          </aside>
+        )
+      }
+    </article>
+  </div>
+
+  <script>
+    // 문구는 서버가 현재 언어로 렌더한 본문 컨테이너의 data-* 속성에서 읽는다.
+    const body = document.querySelector<HTMLElement>('.article-body');
+    const COPY = body?.dataset.copy ?? '';
+    const COPIED = body?.dataset.copied ?? '';
+    const COPY_FAILED = body?.dataset.copyFailed ?? '';
+    const COPY_LABEL = body?.dataset.copyLabel ?? '';
+    const ANCHOR_LABEL = body?.dataset.anchorLabel ?? '';
+
+    // ---- h2/h3 앵커 링크 ----
+    for (const heading of document.querySelectorAll<HTMLElement>('.article-body :is(h2, h3)[id]')) {
+      const anchor = document.createElement('a');
+      anchor.className = 'heading-anchor';
+      anchor.href = `#${heading.id}`;
+      anchor.setAttribute(
+        'aria-label',
+        ANCHOR_LABEL.replace('{heading}', heading.textContent ?? ''),
+      );
+      anchor.textContent = '#';
+      heading.prepend(anchor);
+    }
+
+    // ---- 코드 블록 복사 버튼 ----
+    for (const pre of document.querySelectorAll<HTMLPreElement>('.article-body pre')) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-block';
+      pre.parentNode?.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'code-copy';
+      button.textContent = COPY;
+      button.setAttribute('aria-label', COPY_LABEL);
+      wrapper.appendChild(button);
+
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(pre.innerText);
+          button.textContent = COPIED;
+          setTimeout(() => {
+            button.textContent = COPY;
+          }, 1500);
+        } catch {
+          button.textContent = COPY_FAILED;
+          setTimeout(() => {
+            button.textContent = COPY;
+          }, 1500);
+        }
+      });
+    }
+
+    // ---- 표 가로 스크롤 컨테이너 ----
+    // CRITICAL: 표가 페이지를 가로로 밀지 않게 한다.
+    for (const table of document.querySelectorAll<HTMLTableElement>('.article-body table')) {
+      if (table.parentElement?.classList.contains('table-scroll')) continue;
+      const scroller = document.createElement('div');
+      scroller.className = 'table-scroll';
+      table.parentNode?.insertBefore(scroller, table);
+      scroller.appendChild(table);
+    }
+
+    // ---- 외부 링크 안전 속성 ----
+    for (const link of document.querySelectorAll<HTMLAnchorElement>(
+      '.article-body a[href^="http"]',
+    )) {
+      if (link.host === window.location.host) continue;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  .post-shell {
+    padding-top: var(--spacing-ext-9); /* 56px */
+    /* CRITICAL: 마지막 요소 아래 80px 여백 후 푸터. 이 사이에 아무것도 두지 않는다. */
+    padding-bottom: var(--spacing-ext-10);
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+  }
+
+  .post-main {
+    max-width: var(--prose-max); /* 720px */
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  /* 1024px 이상: 본문 720px + 목차 240px, 간격 40px */
+  @media (min-width: 1024px) {
+    .post-grid.has-toc {
+      grid-template-columns: minmax(0, var(--prose-max)) var(--toc-width);
+      gap: var(--spacing-ext-8);
+      justify-content: center;
+    }
+
+    .post-grid.has-toc .post-main {
+      margin-inline: 0;
+    }
+  }
+
+  .post-aside {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .post-aside {
+      display: block;
+    }
+  }
+
+  .article-body {
+    margin-top: var(--spacing-ext-8); /* 40px */
+  }
+
+  .toc-mobile-slot {
+    margin-top: var(--spacing-ext-7);
+  }
+</style>

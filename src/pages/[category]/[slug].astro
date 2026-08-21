@@ -1,0 +1,33 @@
+---
+import type { GetStaticPaths } from 'astro';
+import PostDetailView from '@/components/views/PostDetailView.astro';
+import { getPublishedPosts, postsForLang, type Post } from '@/lib/posts';
+import { isCategoryId } from '@/config/categories';
+
+/**
+ * 글 상세.
+ * CRITICAL: `[slug]`는 단일 세그먼트다. rest 파라미터(`[...slug]`)로 만들면
+ * `/paper-review/page/2`가 slug "page/2"로 잡혀 페이지네이션이 깨진다.
+ * CRITICAL: draft 글은 getPublishedPosts가 걸러내므로 경로 자체가 생성되지 않는다.
+ *
+ * `postsForLang`이 번역본 묶음에서 이 언어의 글을 고른다. 번역본이 없으면 원문이 실리고,
+ * PostLayout이 안내 배너를 붙이며 canonical을 원문 쪽으로 넘긴다.
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = postsForLang(await getPublishedPosts(), 'ko');
+  return posts
+    .filter((post) => isCategoryId(post.data.category))
+    .map((post) => ({
+      params: { category: post.data.category, slug: post.data.slug },
+      props: { post },
+    }));
+};
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props as Props;
+---
+
+<PostDetailView post={post} />

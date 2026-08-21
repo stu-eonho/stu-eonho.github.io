@@ -1,0 +1,17 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CategoryPageView from '@/components/views/CategoryPageView.astro';
+import { CATEGORIES } from '@/config/categories';
+
+/**
+ * 카테고리 목록 1페이지.
+ * CRITICAL: 경로는 CATEGORIES 배열에서만 파생된다. 카테고리 id 문자열을 하드코딩하지 않는다.
+ * CRITICAL: 1페이지는 `/{category}`이며 `page/1`을 생성하지 않는다.
+ */
+export const getStaticPaths: GetStaticPaths = () =>
+  CATEGORIES.map((category) => ({ params: { category: category.id } }));
+
+const { category } = Astro.params;
+---
+
+<CategoryPageView categoryId={category!} page={1} />

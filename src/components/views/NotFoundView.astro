@@ -1,0 +1,81 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Button from '@/components/ui/Button.astro';
+import { i18n } from '@/config/i18n';
+
+/**
+ * GitHub Pages는 존재하지 않는 경로에 대해 루트의 /404.html을 자동 서빙한다.
+ * 그래서 방문자가 실제로 보게 되는 것은 대개 한국어 404다 — `/en/404`는 언어 토글을
+ * 눌렀을 때 갈 곳이 있어야 해서 함께 생성한다.
+ */
+const { t, href } = i18n(Astro.url);
+---
+
+<BaseLayout path="/404" title={t.notFound.title} description={t.notFound.description}>
+  <div class="container not-found">
+    <h1 class="code">404</h1>
+    <p class="message">{t.notFound.message}</p>
+    <div class="actions">
+      <Button variant="primary" href={href('/')} fullWidthMobile>{t.notFound.goHome}</Button>
+      <Button variant="outline" href={href('/search')} fullWidthMobile>
+        {t.notFound.goSearch}
+      </Button>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--spacing-ext-4);
+    padding-block: var(--spacing-ext-11); /* 120px */
+  }
+
+  .code {
+    font-family: var(--font-display);
+    font-size: var(--text-hero-mobile);
+    line-height: var(--text-hero-mobile--line-height);
+    font-weight: 600;
+    letter-spacing: var(--text-hero--letter-spacing);
+    color: var(--fg);
+  }
+
+  @media (min-width: 768px) {
+    .code {
+      font-size: var(--text-hero);
+      line-height: var(--text-hero--line-height);
+    }
+  }
+
+  .message {
+    font-size: var(--text-tile-mobile);
+    line-height: var(--text-tile-mobile--line-height);
+    font-weight: 400;
+    color: var(--fg-secondary);
+  }
+
+  @media (min-width: 768px) {
+    .message {
+      font-size: var(--text-tile);
+      line-height: var(--text-tile--line-height);
+    }
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-ext-3);
+    margin-top: var(--spacing-ext-2);
+  }
+
+  @media (max-width: 479px) {
+    .actions {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+</style>

@@ -1,0 +1,139 @@
+---
+import { Image } from 'astro:assets';
+import Card from '@/components/ui/Card.astro';
+import Badge from '@/components/ui/Badge.astro';
+import { getCategory } from '@/config/categories';
+import { formatLong, toISODate } from '@/lib/date';
+import { postHref, type Post } from '@/lib/posts';
+import { i18n } from '@/config/i18n';
+
+/**
+ * 글 카드.
+ *
+ * CRITICAL: 카드 전체가 하나의 링크다. 카드 안에 중첩 링크를 두지 않는다 —
+ * 카드 안의 태그는 링크가 아니라 텍스트 배지로 렌더링한다.
+ * (태그 링크는 태그 인덱스와 글 상세에서 제공한다.)
+ */
+interface Props {
+  post: Post;
+  /** 리빌 대상으로 표시할지. 그리드 안에서는 부모가 data-reveal-group을 갖는다 */
+  reveal?: boolean;
+  /**
+   * 카드 제목의 헤딩 레벨.
+   * CRITICAL: 헤딩 위계를 건너뛰지 않게 호출부의 문맥에 맞춘다.
+   *   목록 페이지 — h1(페이지 제목) 바로 아래이므로 2
+   *   홈 "최근 글" — h2(섹션 제목) 아래이므로 3
+   */
+  headingLevel?: 2 | 3;
+}
+
+const { post, reveal = false, headingLevel = 2 } = Astro.props;
+const { lang } = i18n(Astro.url);
+const Heading = `h${headingLevel}` as 'h2' | 'h3';
+const category = getCategory(post.data.category);
+const visibleTags = post.data.tags.slice(0, 3);
+const overflowCount = post.data.tags.length - visibleTags.length;
+---
+
+<Card href={postHref(post, lang)} flush class="post-card" data-reveal={reveal ? true : undefined}>
+  {
+    post.data.cover && post.data.coverAlt && (
+      <div class="cover">
+        <Image
+          src={post.data.cover}
+          alt={post.data.coverAlt}
+          widths={[400, 800]}
+          sizes="(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw"
+          loading="lazy"
+        />
+      </div>
+    )
+  }
+
+  <div class="body">
+    <div class="row-badges">
+      <Badge tone="accent">{category.label}</Badge>
+      {post.data.draft && <Badge tone="neutral">DRAFT</Badge>}
+    </div>
+
+    <Heading class="title clamp-2">{post.data.title}</Heading>
+    <p class="desc clamp-2">{post.data.description}</p>
+
+    <div class="row-meta">
+      <time class="meta-text" datetime={toISODate(post.data.date)}>
+        {formatLong(post.data.date, lang)}
+      </time>
+      {
+        visibleTags.length > 0 && (
+          <span class="tags">
+            {visibleTags.map((tag) => (
+              <Badge tone="neutral">{tag}</Badge>
+            ))}
+            {overflowCount > 0 && <Badge tone="neutral">+{overflowCount}</Badge>}
+          </span>
+        )
+      }
+    </div>
+  </div>
+</Card>
+
+<style>
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .cover {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-2);
+    padding: var(--spacing-content); /* [verified] content 20px */
+  }
+
+  .row-badges {
+    display: flex;
+    gap: var(--spacing-ext-2);
+    flex-wrap: wrap;
+  }
+
+  .title {
+    font-size: var(--text-card); /* 20px / 600 */
+    line-height: var(--text-card--line-height);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .desc {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    color: var(--fg-muted);
+  }
+
+  .row-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-ext-2);
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: var(--spacing-ext-1);
+  }
+
+  .tags {
+    display: flex;
+    gap: var(--spacing-ext-1);
+    flex-wrap: wrap;
+  }
+</style>

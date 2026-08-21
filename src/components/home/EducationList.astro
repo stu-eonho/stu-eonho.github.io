@@ -1,0 +1,34 @@
+---
+import TimelineList, { type TimelineEntry } from './TimelineList.astro';
+import { PROFILE, isPlaceholder } from '@/config/profile';
+import { i18n, text, type MaybeLocalized } from '@/config/i18n';
+
+/** CRITICAL: 항목이 0개면 섹션 전체를 렌더링하지 않는다. */
+const { lang, t } = i18n(Astro.url);
+
+const show = (value: MaybeLocalized | undefined): string | undefined => {
+  const resolved = text(value, lang);
+  return resolved && !isPlaceholder(resolved) ? resolved : undefined;
+};
+
+const entries: TimelineEntry[] = PROFILE.education.map((entry) => ({
+  title: `${text(entry.school, lang)} · ${text(entry.department, lang)}`,
+  kind: t.profile.degree[entry.degree],
+  startDate: entry.startDate,
+  endDate: entry.endDate,
+  detail:
+    [show(entry.lab), show(entry.advisor), show(entry.note)].filter(Boolean).join(' · ') ||
+    undefined,
+}));
+---
+
+{
+  entries.length > 0 && (
+    <section class="cv-section" aria-labelledby="education-heading">
+      <h2 class="cv-heading" id="education-heading">
+        {t.profile.education}
+      </h2>
+      <TimelineList entries={entries} />
+    </section>
+  )
+}

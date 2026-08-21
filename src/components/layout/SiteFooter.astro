@@ -1,0 +1,89 @@
+---
+import { Icon } from 'astro-icon/components';
+import { SITE, GOATCOUNTER_CODE } from '@/config/site';
+import { PROFILE, isPlaceholder, type SocialType } from '@/config/profile';
+import { i18n, text } from '@/config/i18n';
+
+/** 소셜 타입 → lucide 아이콘 매핑. 목록에 없는 값은 homepage 아이콘으로 떨어진다. */
+const SOCIAL_ICON: Record<SocialType, string> = {
+  github: 'lucide:github',
+  scholar: 'lucide:graduation-cap',
+  linkedin: 'lucide:linkedin',
+  x: 'lucide:at-sign',
+  email: 'lucide:mail',
+  orcid: 'lucide:badge-check',
+  homepage: 'lucide:globe',
+};
+
+// CRITICAL: 플레이스홀더 URL로는 링크를 만들지 않는다 — 깨진 링크가 배포된다.
+const { lang, t, href } = i18n(Astro.url);
+const links = PROFILE.links.filter((link) => !isPlaceholder(link.url));
+const name = text(PROFILE.name, lang);
+const ownerName = isPlaceholder(name) ? SITE.title : name;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-links">
+      {
+        links.map((link) => (
+          <a
+            class="icon-button"
+            href={link.url}
+            aria-label={text(link.label, lang)}
+            target={link.url.startsWith('mailto:') ? undefined : '_blank'}
+            rel={link.url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+          >
+            <Icon name={SOCIAL_ICON[link.type] ?? SOCIAL_ICON.homepage} aria-hidden="true" />
+          </a>
+        ))
+      }
+      <a class="icon-button" href={href('/rss.xml')} aria-label={t.footer.rss}>
+        <Icon name="lucide:rss" aria-hidden="true" />
+      </a>
+    </div>
+
+    <p class="footer-line">© {year} {ownerName}</p>
+    <p class="footer-line">{t.footer.builtWith}</p>
+
+    {
+      /* CRITICAL: 스크립트를 넣지 않는 빌드에 고지만 남으면 사실과 다른 문구가 된다.
+         GoatCounter 코드가 설정된 경우에만 출력한다. */
+      GOATCOUNTER_CODE && <p class="footer-line">{t.footer.analytics}</p>
+    }
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--spacing-ext-10);
+    border-top: 1px solid var(--hairline);
+    background: var(--canvas);
+    padding-block: var(--spacing-ext-8); /* 40px */
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-ext-2);
+    text-align: center;
+  }
+
+  .footer-links {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-ext-1);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-line {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    color: var(--fg-muted);
+    margin: 0;
+  }
+</style>
