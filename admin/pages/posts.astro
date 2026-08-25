@@ -1,0 +1,106 @@
+---
+/**
+ * 글 목록 — `/admin/posts`
+ */
+import { Icon } from 'astro-icon/components';
+import AdminLayout from '../components/AdminLayout.astro';
+import Button from '@/components/ui/Button.astro';
+import Card from '@/components/ui/Card.astro';
+import { L } from '../labels';
+---
+
+<AdminLayout title={L.nav.posts} current="posts">
+  <div class="admin-toolbar">
+    <label class="admin-visually-hidden" for="post-search">{L.posts.search}</label>
+    <input
+      class="admin-input"
+      id="post-search"
+      type="search"
+      placeholder={L.posts.search}
+      data-filter="q"
+      style="max-width: 280px"
+    />
+
+    <label class="admin-visually-hidden" for="post-category">{L.posts.allCategories}</label>
+    <select class="admin-select" id="post-category" data-filter="category" style="max-width: 200px">
+      <option value="">{L.posts.allCategories}</option>
+    </select>
+
+    <label class="admin-visually-hidden" for="post-lang">{L.posts.allLanguages}</label>
+    <select class="admin-select" id="post-lang" data-filter="lang" style="max-width: 160px">
+      <option value="">{L.posts.allLanguages}</option>
+    </select>
+
+    <div class="admin-segment" role="group" aria-label={L.posts.draftAll}>
+      <button type="button" class="admin-segment-item" data-draft="all" aria-pressed="true">
+        {L.posts.draftAll}
+      </button>
+      <button type="button" class="admin-segment-item" data-draft="only" aria-pressed="false">
+        {L.posts.draftOnly}
+      </button>
+      <button type="button" class="admin-segment-item" data-draft="exclude" aria-pressed="false">
+        {L.posts.draftExclude}
+      </button>
+    </div>
+
+    <span class="admin-toolbar-spacer"></span>
+
+    <Button variant="compact" href="/admin/posts/edit">{L.posts.newPost}</Button>
+  </div>
+
+  <Card>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="admin-th">{L.posts.colStatus}</th>
+            <th class="admin-th">
+              <button type="button" class="admin-th-sortable" data-sort="title">
+                {L.posts.colTitle}
+              </button>
+            </th>
+            <th class="admin-th">{L.posts.colCategory}</th>
+            <th class="admin-th">{L.posts.colTags}</th>
+            <th class="admin-th">
+              <button type="button" class="admin-th-sortable" data-sort="date">
+                {L.posts.colDate}
+              </button>
+            </th>
+            <th class="admin-th">{L.posts.colTranslation}</th>
+            <th class="admin-th">{L.posts.colActions}</th>
+          </tr>
+        </thead>
+        <tbody data-post-rows></tbody>
+      </table>
+    </div>
+    <div data-post-empty></div>
+  </Card>
+</AdminLayout>
+
+{/* 삭제 확인 — CRITICAL: 기본 선택은 취소다 */}
+<dialog class="admin-dialog" data-delete-dialog>
+  <h2 class="admin-dialog-title">{L.posts.deleteTitle}</h2>
+  <div class="admin-dialog-body">
+    <p class="admin-path" data-delete-path></p>
+    <label class="admin-check admin-row-hidden" data-delete-translation-wrap>
+      <input class="admin-check-input" type="checkbox" data-delete-translation />
+      {L.posts.deleteWithTranslation}
+    </label>
+    <p class="admin-warning">
+      <Icon name="lucide:triangle-alert" class="admin-error-icon" aria-hidden="true" />
+      <span>{L.posts.deleteWarning}</span>
+    </p>
+  </div>
+  <div class="admin-dialog-actions">
+    <Button variant="compact-outline" data-dialog-cancel>{L.posts.cancel}</Button>
+    <Button variant="compact" data-dialog-confirm>{L.posts.confirm}</Button>
+  </div>
+</dialog>
+
+<script>
+  import { initPostList } from '../client/post-list';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initPostList();
+</script>

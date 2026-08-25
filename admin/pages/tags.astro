@@ -1,0 +1,86 @@
+---
+/**
+ * 태그 관리 — `/admin/tags`
+ *
+ * CRITICAL: 어떤 동작이든 실행 전 `dryRun`으로 영향 파일 목록을 받아 확인을 거친다.
+ */
+import AdminLayout from '../components/AdminLayout.astro';
+import DiffPreview from '../components/DiffPreview.astro';
+import { L } from '../labels';
+---
+
+<AdminLayout title={L.nav.tags} current="tags">
+  <div class="admin-toolbar">
+    <div class="admin-segment" role="group" aria-label="정렬">
+      <button type="button" class="admin-segment-item" data-sort="count" aria-pressed="true">
+        {L.tags.sortByCount}
+      </button>
+      <button type="button" class="admin-segment-item" data-sort="name" aria-pressed="false">
+        {L.tags.sortByName}
+      </button>
+    </div>
+    <span class="admin-toolbar-spacer"></span>
+    <button type="button" class="admin-textbutton" data-merge-selected disabled>
+      {L.tags.merge}
+    </button>
+  </div>
+
+  <div class="admin-stack" data-tag-list></div>
+  <div data-tag-empty></div>
+
+  <template data-tag-template>
+    <div>
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: var(--spacing-ext-3); flex-wrap: wrap">
+          <label class="admin-check">
+            <input class="admin-check-input" type="checkbox" data-tag-select />
+            <span class="admin-visually-hidden">선택</span>
+          </label>
+          <strong data-tag-label></strong>
+          <span class="badge badge-neutral" data-tag-count></span>
+          <span class="badge badge-accent admin-row-hidden" data-tag-variants></span>
+          <span class="admin-toolbar-spacer"></span>
+          <button type="button" class="admin-textbutton admin-row-hidden" data-tag-normalize>
+            {L.tags.normalize}
+          </button>
+          <button type="button" class="admin-textbutton" data-tag-rename>{L.tags.rename}</button>
+          <button type="button" class="admin-textbutton" data-tag-delete>{L.tags.delete}</button>
+        </div>
+
+        <details class="admin-details" style="margin-top: var(--spacing-ext-3); border: none">
+          <summary class="admin-summary" style="padding-inline: 0">사용 중인 글</summary>
+          <div class="admin-details-body" style="padding-inline: 0">
+            <ul class="admin-list" data-tag-posts></ul>
+            <div class="admin-chips" data-tag-variant-list style="border: none; padding: 0"></div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </template>
+
+  <DiffPreview id="tag-diff" />
+
+  <dialog class="admin-dialog" data-rename-dialog>
+    <h2 class="admin-dialog-title">{L.tags.rename}</h2>
+    <div class="admin-dialog-body">
+      <div class="admin-field">
+        <label class="admin-label" for="rename-input">새 표기 (24자 이내)</label>
+        <input class="admin-input" id="rename-input" type="text" maxlength="24" data-rename-input />
+      </div>
+    </div>
+    <div class="admin-dialog-actions">
+      <button type="button" class="btn btn-compact-outline" data-dialog-cancel>
+        {L.posts.cancel}
+      </button>
+      <button type="button" class="btn btn-compact" data-dialog-confirm>{L.tags.apply}</button>
+    </div>
+  </dialog>
+</AdminLayout>
+
+<script>
+  import { initTags } from '../client/tags';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initTags();
+</script>

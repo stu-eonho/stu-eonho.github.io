@@ -1,0 +1,125 @@
+---
+/**
+ * 관리자 셸.
+ *
+ * CRITICAL: 이 레이아웃과 그 아래 관리자 페이지는 `src/config/*`를 import하지 않는다.
+ * 관리자가 설정 파일을 저장하면 Vite가 그 모듈을 무효화하고, 의존하는 관리자 페이지가
+ * 리로드되어 편집 중인 폼 입력이 사라진다. 설정에서 오는 값은 전부 API로 가져온다.
+ *
+ * CRITICAL: 사이트의 `src/scripts/shortcuts.ts`를 로드하지 않는다 — 검색 단축키가
+ * 관리자의 저장 단축키와 겹친다. 모션(`src/scripts/motion.ts`)도 쓰지 않는다.
+ */
+import AdminNav from './AdminNav.astro';
+import SaveBar from './SaveBar.astro';
+import { L } from '../labels';
+import '../styles/admin.css';
+
+interface Props {
+  title: string;
+  /** AdminNav의 활성 항목 키 */
+  current: string;
+  /** 제목 우측 보조 문구 */
+  hint?: string;
+  /** 저장 바를 두지 않는 화면(대시보드·목록 등) */
+  savebar?: boolean;
+}
+
+const { title, current, hint, savebar = false } = Astro.props;
+
+// dev 서버 프로세스의 환경변수를 그대로 읽는다.
+// CRITICAL: `PUBLIC_` 접두사가 없으므로 Vite가 클라이언트 번들에 인라인하지 않는다.
+const allowRemote = process.env.ADMIN_ALLOW_REMOTE === '1';
+
+// 관리자 페이지의 CSP. 업로드 프리뷰가 blob:/data:를 쓴다.
+const csp = [
+  "default-src 'self'",
+  "img-src 'self' data: blob:",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "frame-src 'none'",
+  "connect-src 'self'",
+].join('; ');
+---
+
+<!doctype html>
+<html lang="ko" data-admin>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content={csp} />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · {L.app.title}</title>
+
+    {
+      /*
+      CRITICAL: KaTeX CSS를 반드시 싣는다.
+      이게 없으면 KaTeX가 내보내는 두 벌(`.katex-mathml` 접근성용 MathML + `.katex-html`
+      시각용 마크업) 중 어느 쪽도 숨겨지지 않아, 브라우저가 MathML을 자체 렌더한 수식 **아래에**
+      스타일 없는 `.katex-html` 조각(`√`, `dk`, `QK⊤` 같은 파편)이 함께 찍힌다.
+      사이트는 `math: true`인 글에서만 싣지만(23KB 절약), 관리자는 dev 전용이고 어느 글이든
+      바로 켤 수 있어야 하므로 항상 싣는다.
+    */
+    }
+    <link rel="stylesheet" href="/katex/katex.min.css" />
+
+    {/* 사이트에서 고른 테마를 그대로 읽는다. 관리자에는 테마 토글을 두지 않는다. */}
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('theme');
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.setAttribute('data-theme', stored);
+          }
+        } catch {
+          /* localStorage 접근 불가 환경에서는 시스템 설정을 따른다 */
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <div class="admin-shell">
+      {
+        allowRemote && (
+          <div class="admin-remote-banner" role="alert">
+            {L.app.remoteWarning}
+          </div>
+        )
+      }
+
+      <div class="admin-body">
+        <AdminNav current={current} />
+
+        <main class="admin-main" id="admin-main">
+          <div class="admin-page-head">
+            <h1 class="admin-page-title">{title}</h1>
+            {hint && <p class="admin-page-hint">{hint}</p>}
+          </div>
+          <slot />
+        </main>
+      </div>
+
+      {savebar && <SaveBar />}
+      <div class="admin-toasts" aria-live="polite"></div>
+    </div>
+
+    <script>
+      // 셸 부트스트랩 — 세션을 받아 사이트 제목과 브랜치를 채운다.
+      // CRITICAL: HMR로 이 모듈이 다시 실행되면 편집 중인 폼 상태가 초기화된다.
+      import { getSession, reportError } from '../client/api';
+
+      // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+      // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+      import.meta.hot?.accept(() => {});
+
+      getSession()
+        .then((session) => {
+          const title = document.querySelector<HTMLElement>('[data-session-title]');
+          if (title) title.textContent = session.siteTitle;
+          const branch = document.querySelector<HTMLElement>('[data-session-branch]');
+          if (branch && session.gitBranch) branch.textContent = `⎇ ${session.gitBranch}`;
+        })
+        .catch(reportError);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+---
+/**
+ * 관리자 사이드바 내비게이션.
+ *
+ * CRITICAL: `src/config/*`를 import하지 않는다. 관리자가 설정 파일을 쓰면 Vite가 그
+ * 모듈을 무효화하고, 의존하는 관리자 페이지가 리로드되어 편집 중인 폼이 날아간다.
+ * 사이트 제목·브랜치처럼 설정에서 오는 값은 전부 `/__admin/api/session`으로 가져온다.
+ */
+import { Icon } from 'astro-icon/components';
+import { L } from '../labels';
+
+interface Props {
+  /** 현재 활성 항목의 키 */
+  current: string;
+}
+
+const { current } = Astro.props;
+
+const ITEMS = [
+  { key: 'dashboard', href: '/admin', icon: 'lucide:layout-dashboard', label: L.nav.dashboard },
+  { key: 'posts', href: '/admin/posts', icon: 'lucide:file-text', label: L.nav.posts },
+  { key: 'profile', href: '/admin/profile', icon: 'lucide:user-round', label: L.nav.profile },
+  { key: 'settings', href: '/admin/settings', icon: 'lucide:settings', label: L.nav.settings },
+  { key: 'strings', href: '/admin/strings', icon: 'lucide:languages', label: L.nav.strings },
+  { key: 'tags', href: '/admin/tags', icon: 'lucide:tags', label: L.nav.tags },
+  { key: 'assets', href: '/admin/assets', icon: 'lucide:image', label: L.nav.assets },
+];
+---
+
+<nav class="admin-sidebar" aria-label={L.app.title}>
+  <div class="admin-brand">
+    <span class="admin-brand-title" data-session-title>{L.app.loading}</span>
+    <span class="admin-hint">{L.app.devOnly}</span>
+  </div>
+
+  <ul class="admin-nav-list">
+    {
+      ITEMS.map((item) => (
+        <li>
+          <a
+            class="admin-nav-link"
+            href={item.href}
+            aria-current={
+              item.key === current || (current === 'editor' && item.key === 'posts')
+                ? 'page'
+                : undefined
+            }
+          >
+            <Icon name={item.icon} class="admin-nav-icon" aria-hidden="true" />
+            <span>{item.label}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="admin-sidebar-foot">
+    <a class="admin-external" href="/" target="_blank" rel="noopener noreferrer">
+      {L.app.openSite}
+      <Icon name="lucide:external-link" class="admin-nav-icon" aria-hidden="true" />
+    </a>
+    <span data-session-branch></span>
+  </div>
+</nav>

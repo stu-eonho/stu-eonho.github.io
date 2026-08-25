@@ -1,0 +1,161 @@
+---
+/**
+ * 관리자 대시보드 — `/admin`
+ *
+ * CRITICAL: `src/config/*`를 import하지 않는다. 통계·프로필 미기입·git 상태는 전부
+ * API로 가져온다. 설정 모듈에 의존하면 관리자가 설정을 저장할 때 HMR이 이 페이지를
+ * 리로드한다.
+ */
+import { Icon } from 'astro-icon/components';
+import AdminLayout from '../components/AdminLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import Button from '@/components/ui/Button.astro';
+import { L } from '../labels';
+---
+
+<AdminLayout title={L.nav.dashboard} current="dashboard">
+  <div data-dashboard>
+    <div class="admin-tiles" data-tiles>
+      <a class="admin-tile" href="/admin/posts" data-tile="all">
+        <Card>
+          <span class="admin-tile-value" data-tile-value>—</span>
+          <span class="admin-tile-label">{L.dashboard.totalPosts}</span>
+          <span class="admin-hint" data-tile-hint></span>
+        </Card>
+      </a>
+
+      <a class="admin-tile" href="/admin/posts?draft=only" data-tile="drafts">
+        <Card>
+          <span class="admin-tile-value" data-tile-value>—</span>
+          <span class="admin-tile-label">{L.dashboard.drafts}</span>
+        </Card>
+      </a>
+
+      <a class="admin-tile" href="/admin/posts?translation=missing" data-tile="missing">
+        <Card>
+          <span class="admin-tile-value" data-tile-value>—</span>
+          <span class="admin-tile-label">{L.dashboard.missingTranslation}</span>
+        </Card>
+      </a>
+
+      <a class="admin-tile" href="/admin/posts?valid=invalid" data-tile="invalid">
+        <Card>
+          <span class="admin-tile-value" data-tile-value>—</span>
+          <span class="admin-tile-label">
+            <Icon
+              name="lucide:triangle-alert"
+              class="admin-tile-alert-icon admin-row-hidden"
+              data-tile-alert
+              aria-hidden="true"
+            />
+            {L.dashboard.schemaErrors}
+          </span>
+        </Card>
+      </a>
+    </div>
+
+    <div class="admin-columns">
+      <Card>
+        <h2 class="admin-section-title">{L.dashboard.placeholders}</h2>
+        <ul class="admin-list" data-placeholders></ul>
+      </Card>
+
+      <Card>
+        <h2 class="admin-section-title">{L.dashboard.recent}</h2>
+        <ul class="admin-list" data-recent></ul>
+      </Card>
+    </div>
+
+    <div class="admin-row-hidden" data-git-card style="margin-top: var(--spacing-ext-4)">
+      <Card>
+        <h2 class="admin-section-title">{L.dashboard.gitTitle}</h2>
+
+        {/* 커밋 대기 중인 파일 — 기본은 전부 선택 */}
+        <div class="admin-toolbar" style="margin-bottom: var(--spacing-ext-3)">
+          <label class="admin-check">
+            <input class="admin-check-input" type="checkbox" data-git-all checked />
+            {L.dashboard.selectAll}
+          </label>
+          <span class="admin-toolbar-spacer"></span>
+          <span class="admin-hint" data-git-selected></span>
+        </div>
+
+        <ul class="admin-list" data-git-files></ul>
+        <p class="admin-hint admin-row-hidden" data-git-clean>{L.dashboard.gitClean}</p>
+
+        {/* 커밋 */}
+        <div class="admin-field" style="margin-top: var(--spacing-ext-4)">
+          <label class="admin-label" for="git-message">{L.dashboard.commitMessage}</label>
+          <input
+            class="admin-input"
+            id="git-message"
+            type="text"
+            data-git-message
+            placeholder={L.dashboard.commitMessagePlaceholder}
+          />
+        </div>
+        <div class="admin-asset-actions" style="margin-top: var(--spacing-ext-3)">
+          <Button variant="compact" data-git-commit>{L.dashboard.commit}</Button>
+        </div>
+
+        {/* 푸시 — CRITICAL: 여기서부터는 공개 배포다 */}
+        <hr
+          style="border: none; border-top: 1px solid var(--hairline); margin-block: var(--spacing-ext-5)"
+        />
+        <div class="admin-toolbar" style="margin-bottom: 0">
+          <span class="admin-hint" data-git-ahead></span>
+          <span class="admin-toolbar-spacer"></span>
+          <Button variant="compact-outline" data-git-push>{L.dashboard.push}</Button>
+        </div>
+        <p class="admin-hint">{L.dashboard.pushNotice}</p>
+
+        {/* 손으로 하고 싶을 때를 위한 명령어 */}
+        <details class="admin-details" style="margin-top: var(--spacing-ext-4)">
+          <summary class="admin-summary">{L.dashboard.manualCommands}</summary>
+          <div class="admin-details-body">
+            <div class="admin-code-block">
+              <code class="admin-code-text" data-git-command></code>
+              <button type="button" class="admin-textbutton" data-git-copy
+                >{L.dashboard.gitCopy}</button
+              >
+            </div>
+          </div>
+        </details>
+      </Card>
+    </div>
+  </div>
+
+  {
+    /*
+    푸시 확인.
+    CRITICAL: 푸시는 되돌리기 어려운 외부 행위다 — 확인 없이 실행하지 않고,
+    기본 선택은 취소다. 초안 글이 있으면 그 사실을 여기서 알린다.
+  */
+  }
+  <dialog class="admin-dialog" data-push-dialog>
+    <h2 class="admin-dialog-title">{L.dashboard.pushConfirmTitle}</h2>
+    <div class="admin-dialog-body">
+      <ul class="admin-list" data-push-summary></ul>
+      <p class="admin-warning">
+        <Icon name="lucide:triangle-alert" class="admin-error-icon" aria-hidden="true" />
+        <span>{L.dashboard.pushWarning}</span>
+      </p>
+      <p class="admin-warning admin-row-hidden" data-push-draft-warning>
+        <Icon name="lucide:triangle-alert" class="admin-error-icon" aria-hidden="true" />
+        <span data-push-draft-text></span>
+      </p>
+    </div>
+    <div class="admin-dialog-actions">
+      <Button variant="compact-outline" data-dialog-cancel>{L.posts.cancel}</Button>
+      <Button variant="compact" data-dialog-confirm>{L.dashboard.push}</Button>
+    </div>
+  </dialog>
+</AdminLayout>
+
+<script>
+  import { initDashboard } from '../client/dashboard';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initDashboard();
+</script>

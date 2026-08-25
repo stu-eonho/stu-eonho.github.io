@@ -1,0 +1,72 @@
+---
+/**
+ * UI 문자열 — `/admin/strings`
+ *
+ * CRITICAL: 키 추가·삭제 UI를 두지 않는다. `ko`와 `en`의 키 집합이 갈리는 순간
+ * `astro check`가 실패하고, 그 복구를 관리자가 해 줄 수 없다.
+ */
+import AdminLayout from '../components/AdminLayout.astro';
+import { L } from '../labels';
+---
+
+<AdminLayout title={L.nav.strings} current="strings" savebar>
+  <div class="admin-toolbar">
+    <label class="admin-visually-hidden" for="string-search">{L.strings.search}</label>
+    <input
+      class="admin-input"
+      id="string-search"
+      type="search"
+      placeholder={L.strings.search}
+      data-string-search
+      style="max-width: 320px"
+    />
+    <label class="admin-check">
+      <input class="admin-check-input" type="checkbox" data-untranslated-only />
+      {L.strings.untranslatedOnly}
+    </label>
+    <span class="admin-toolbar-spacer"></span>
+    <span class="admin-hint" data-string-count></span>
+  </div>
+
+  <div class="admin-stack" data-string-groups></div>
+
+  <p class="admin-hint" style="margin-top: var(--spacing-ext-5)">{L.strings.addKeyNotice}</p>
+
+  <template data-group-template>
+    <div>
+      <details class="admin-details" open>
+        <summary class="admin-summary" data-group-name></summary>
+        <div class="admin-details-body" data-group-rows></div>
+      </details>
+    </div>
+  </template>
+
+  <template data-string-row-template>
+    <div
+      class="admin-grid-2"
+      data-string-row
+      style="grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr) minmax(0, 2fr); align-items: start"
+    >
+      <div class="admin-field">
+        <span class="admin-path" data-row-path></span>
+        <span class="badge badge-neutral admin-row-hidden" data-row-readonly></span>
+      </div>
+      <div class="admin-field">
+        <label class="admin-lang-tag">KO</label>
+        <input class="admin-input" type="text" data-row-input="ko" />
+      </div>
+      <div class="admin-field">
+        <label class="admin-lang-tag">EN</label>
+        <input class="admin-input" type="text" data-row-input="en" />
+      </div>
+    </div>
+  </template>
+</AdminLayout>
+
+<script>
+  import { initStrings } from '../client/strings';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initStrings();
+</script>

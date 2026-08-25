@@ -1,0 +1,74 @@
+---
+/**
+ * `MaybeLocalized` 입력.
+ *
+ * 기본은 한 칸이며 우측 "언어별" 토글을 켜면 ko/en 두 칸으로 갈라진다.
+ *
+ * CRITICAL: 이 토글이 `MaybeLocalized` 타입의 두 형태를 그대로 반영한다.
+ *   꺼짐 → `'PyTorch'`           (두 언어 공통 문자열 하나)
+ *   켜짐 → `{ ko: '…', en: '…' }`
+ * 고유명사에 불필요한 `{ ko, en }`을 강제하지 않는 것이 이 설계의 목적이다.
+ */
+import { L } from '../labels';
+
+interface Props {
+  label: string;
+  /** 폼 직렬화 경로. 예: `name`, `career[0].company` */
+  path: string;
+  hint?: string;
+  max?: number;
+  /** 여러 줄 입력으로 만들지 */
+  multiline?: boolean;
+}
+
+const { label, path, hint, max, multiline = false } = Astro.props;
+const single = `${path}--single`;
+const ko = `${path}--ko`;
+const en = `${path}--en`;
+---
+
+<div class="admin-field" data-localized-field={path} data-invalid="false" data-split="false">
+  <div class="admin-field-head">
+    <label class="admin-label" for={single}>{label}</label>
+    <button type="button" class="admin-toggle-localized" data-localized-toggle aria-pressed="false">
+      {L.profile.localized}
+    </button>
+  </div>
+
+  {/* 단일 값 */}
+  <div data-localized-single>
+    {
+      multiline ? (
+        <textarea class="admin-textarea" id={single} data-input="single" maxlength={max} />
+      ) : (
+        <input class="admin-input" id={single} type="text" data-input="single" maxlength={max} />
+      )
+    }
+  </div>
+
+  {/* 언어별 두 칸 */}
+  <div class="admin-localized admin-row-hidden" data-localized-split>
+    <div class="admin-field">
+      <label class="admin-lang-tag" for={ko}>KO</label>
+      {
+        multiline ? (
+          <textarea class="admin-textarea" id={ko} data-input="ko" maxlength={max} />
+        ) : (
+          <input class="admin-input" id={ko} type="text" data-input="ko" maxlength={max} />
+        )
+      }
+    </div>
+    <div class="admin-field">
+      <label class="admin-lang-tag" for={en}>EN</label>
+      {
+        multiline ? (
+          <textarea class="admin-textarea" id={en} data-input="en" maxlength={max} />
+        ) : (
+          <input class="admin-input" id={en} type="text" data-input="en" maxlength={max} />
+        )
+      }
+    </div>
+  </div>
+
+  {hint && <p class="admin-hint">{hint}</p>}
+</div>

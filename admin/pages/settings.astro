@@ -1,0 +1,158 @@
+---
+/**
+ * 사이트 설정 + 카테고리 — `/admin/settings`
+ */
+import { Icon } from 'astro-icon/components';
+import AdminLayout from '../components/AdminLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import Field from '../components/Field.astro';
+import RepeatableList from '../components/RepeatableList.astro';
+import { L } from '../labels';
+---
+
+<AdminLayout title={L.nav.settings} current="settings" savebar>
+  <div class="admin-stack">
+    {/* ---------- 사이트 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.settings.site}</h2>
+      <div class="admin-stack">
+        <Field label="사이트 제목" for="site-title" path="title" max={40}>
+          <input class="admin-input" id="site-title" type="text" data-name="title" />
+        </Field>
+
+        <div class="admin-grid-2">
+          <Field label="설명 (KO)" for="desc-ko" path="description.ko" max={160}>
+            <textarea class="admin-textarea" id="desc-ko" data-name="description.ko"></textarea>
+          </Field>
+          <Field label="설명 (EN)" for="desc-en" path="description.en" max={160}>
+            <textarea class="admin-textarea" id="desc-en" data-name="description.en"></textarea>
+          </Field>
+        </div>
+
+        <Field label="사이트 URL" for="site-url" path="url" hint="후행 슬래시 없이 적습니다">
+          <input class="admin-input" id="site-url" type="url" data-name="url" />
+          <p class="admin-hint admin-row-hidden" data-url-env-warning>
+            <Icon name="lucide:triangle-alert" class="admin-error-icon" aria-hidden="true" />
+            {L.settings.urlEnvWarning}
+          </p>
+        </Field>
+
+        <div class="admin-grid-2">
+          <Field label="목록 한 페이지당 글 수" for="pp" path="postsPerPage">
+            <input class="admin-input" id="pp" type="number" min="1" data-name="postsPerPage" />
+          </Field>
+          <Field label="홈의 최근 글 수" for="rp" path="recentPostsOnHome">
+            <input
+              class="admin-input"
+              id="rp"
+              type="number"
+              min="1"
+              data-name="recentPostsOnHome"
+            />
+          </Field>
+          <Field label="RSS 항목 수" for="rl" path="rssItemLimit">
+            <input class="admin-input" id="rl" type="number" min="1" data-name="rssItemLimit" />
+          </Field>
+          <Field label="기본 OG 이미지" for="og" path="defaultOgImage">
+            <input class="admin-input" id="og" type="text" data-name="defaultOgImage" />
+          </Field>
+        </div>
+
+        {/* CRITICAL: 파생·고정 값은 읽기 전용 행으로만 보여 준다 */}
+        <div>
+          <div class="admin-readonly-row">
+            <span class="admin-label">
+              <Icon name="lucide:lock" class="admin-error-icon" aria-hidden="true" /> base
+            </span>
+            <span class="admin-readonly-value" data-readonly="base"></span>
+          </div>
+          <p class="admin-hint">{L.settings.baseReason}</p>
+
+          <div class="admin-readonly-row">
+            <span class="admin-label">
+              <Icon name="lucide:lock" class="admin-error-icon" aria-hidden="true" /> navOrder
+            </span>
+            <span class="admin-readonly-value" data-readonly="navOrder"></span>
+          </div>
+          <p class="admin-hint">{L.settings.navOrderReason}</p>
+        </div>
+      </div>
+    </Card>
+
+    {/* ---------- 카테고리 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.settings.categories}</h2>
+      <RepeatableList path="categories" addLabel={L.settings.addCategory}>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-id">id (URL 세그먼트)</label>
+          <input class="admin-input" id="cat-id" type="text" data-name="id" />
+          <p class="admin-hint" data-id-hint></p>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-label">label (영문 표기)</label>
+          <input class="admin-input" id="cat-label" type="text" data-name="label" />
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-labelko">labelKo (한국어 표기)</label>
+          <input class="admin-input" id="cat-labelko" type="text" data-name="labelKo" />
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-icon">아이콘 (lucide 이름)</label>
+          <input
+            class="admin-input"
+            id="cat-icon"
+            type="text"
+            list="lucide-icons"
+            data-name="icon"
+          />
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-desc-ko">설명 (KO, 120자)</label>
+          <textarea
+            class="admin-textarea"
+            id="cat-desc-ko"
+            maxlength="120"
+            data-name="description.ko"></textarea>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-desc-en">설명 (EN, 120자)</label>
+          <textarea
+            class="admin-textarea"
+            id="cat-desc-en"
+            maxlength="120"
+            data-name="description.en"></textarea>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="cat-panel">메타 패널</label>
+          <select class="admin-select" id="cat-panel" data-name="metaPanel">
+            <option value="none">none</option>
+            <option value="paper">paper</option>
+            <option value="project">project</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <span class="admin-label">사용 현황</span>
+          <span class="badge badge-neutral" data-post-count>—</span>
+        </div>
+      </RepeatableList>
+      <datalist id="lucide-icons"></datalist>
+    </Card>
+
+    {/* ---------- 분석 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.settings.analytics}</h2>
+      <div class="admin-readonly-row">
+        <span class="admin-label">PUBLIC_GOATCOUNTER_CODE</span>
+        <span class="admin-readonly-value" data-goatcounter></span>
+      </div>
+    </Card>
+  </div>
+</AdminLayout>
+
+<script>
+  import { initSettings } from '../client/settings';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initSettings();
+</script>

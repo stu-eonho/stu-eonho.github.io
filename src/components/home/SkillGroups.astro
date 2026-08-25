@@ -20,8 +20,13 @@ const groups = PROFILE.skillGroups.map((group) => ({
 
       <div class="groups" data-reveal-group>
         {groups.map((group) => (
-          <div class="group" data-reveal>
-            <p class="eyebrow">{group.name}</p>
+          /*
+            CRITICAL: 그룹명이 비면 `.group-unnamed`로 왼쪽 컬럼을 없앤다.
+            그렇지 않으면 640px 이상에서 120px짜리 빈 칸이 남고 칩만 오른쪽으로 밀린다.
+            그룹을 하나만 쓰는 사람에게는 그룹명이 필요 없다 — 비워 두는 것이 정상 사용이다.
+          */
+          <div class={`group${group.name ? '' : ' group-unnamed'}`} data-reveal>
+            {group.name && <p class="eyebrow">{group.name}</p>}
             <ul class="chips">
               {group.items.map((item) => (
                 <li>
@@ -55,6 +60,11 @@ const groups = PROFILE.skillGroups.map((group) => ({
       grid-template-columns: 120px minmax(0, 1fr);
       align-items: baseline;
       gap: var(--spacing-ext-4);
+    }
+
+    /* 그룹명이 없으면 칩이 왼쪽 끝에서 시작한다 */
+    .group-unnamed {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 

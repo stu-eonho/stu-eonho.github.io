@@ -1,0 +1,40 @@
+---
+/**
+ * 이미지 — `/admin/assets`
+ */
+import { Icon } from 'astro-icon/components';
+import AdminLayout from '../components/AdminLayout.astro';
+import { L } from '../labels';
+---
+
+<AdminLayout title={L.nav.assets} current="assets">
+  <button type="button" class="admin-drop" data-asset-drop>
+    <Icon name="lucide:image" class="admin-nav-icon" aria-hidden="true" />
+    <span>{L.assets.dropHere}</span>
+    <span class="admin-hint">{L.assets.dropMultiple}</span>
+  </button>
+
+  <div class="admin-asset-grid" data-asset-grid style="margin-top: var(--spacing-ext-5)"></div>
+  <div data-asset-empty></div>
+
+  <template data-asset-template>
+    <div class="card" data-asset-card>
+      <img class="admin-asset-thumb" data-asset-thumb alt="" />
+      <p class="admin-asset-name" data-asset-name></p>
+      <p class="admin-asset-meta" data-asset-meta></p>
+      <p class="admin-asset-meta" data-asset-usage></p>
+      <div class="admin-asset-actions">
+        <button type="button" class="admin-textbutton" data-asset-copy>{L.assets.copyPath}</button>
+        <button type="button" class="admin-textbutton" data-asset-delete>{L.assets.delete}</button>
+      </div>
+    </div>
+  </template>
+</AdminLayout>
+
+<script>
+  import { initAssets } from '../client/assets';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initAssets();
+</script>

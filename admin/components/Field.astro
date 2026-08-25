@@ -1,0 +1,46 @@
+---
+/**
+ * label + 입력 + 힌트 + 오류 슬롯.
+ *
+ * 오류는 `data-invalid="true"`가 붙었을 때만 보인다 — 색만이 아니라 아이콘과 텍스트를
+ * 함께 쓴다(색각 이상에서도 오류임이 전달되어야 한다).
+ */
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  label: string;
+  /** 입력 id. label의 for와 짝을 이룬다 */
+  for?: string;
+  hint?: string;
+  /** 글자 수 카운터를 붙일 상한 */
+  max?: number;
+  /** 폼 직렬화 경로. forms.ts가 이 값으로 값을 읽고 쓴다 */
+  path?: string;
+  class?: string;
+}
+
+const { label, for: htmlFor, hint, max, path, class: className } = Astro.props;
+const classes = ['admin-field', className].filter(Boolean).join(' ');
+---
+
+<div class={classes} data-field={path} data-invalid="false">
+  <div class="admin-field-head">
+    <label class="admin-label" for={htmlFor}>{label}</label>
+    {
+      max !== undefined && (
+        <span class="admin-counter" data-counter={max}>
+          0 / {max}
+        </span>
+      )
+    }
+  </div>
+
+  <slot />
+
+  {hint && <p class="admin-hint">{hint}</p>}
+
+  <p class="admin-error" data-error>
+    <Icon name="lucide:circle-alert" class="admin-error-icon" aria-hidden="true" />
+    <span data-error-text></span>
+  </p>
+</div>

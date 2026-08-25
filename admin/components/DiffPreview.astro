@@ -1,0 +1,35 @@
+---
+/**
+ * 일괄 수정 전 영향 파일 목록.
+ *
+ * CRITICAL: 태그 동작은 무엇이든 `dryRun`으로 영향 범위를 먼저 받아 이 화면에 보여 주고,
+ * 사용자가 확인해야 실제 쓰기가 일어난다. 확인 없이는 파일이 바뀌지 않는다.
+ */
+import { Icon } from 'astro-icon/components';
+import Button from '@/components/ui/Button.astro';
+import { L } from '../labels';
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<dialog class="admin-dialog" id={id} data-diff-dialog>
+  <h2 class="admin-dialog-title" data-diff-title></h2>
+
+  <p class="admin-warning">
+    <Icon name="lucide:triangle-alert" class="admin-error-icon" aria-hidden="true" />
+    <span>{L.tags.normalizeNotice}</span>
+  </p>
+
+  <div class="admin-dialog-body">
+    <div class="admin-diff" data-diff-list></div>
+  </div>
+
+  <div class="admin-dialog-actions">
+    <Button variant="compact-outline" data-diff-cancel>{L.posts.cancel}</Button>
+    <Button variant="compact" data-diff-confirm>{L.tags.apply}</Button>
+  </div>
+</dialog>

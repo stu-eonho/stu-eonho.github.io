@@ -1,0 +1,215 @@
+---
+/**
+ * 프로필 — `/admin/profile`
+ *
+ * `src/config/profile.ts`의 `PROFILE` 선언만 갱신한다. 파일의 나머지는 손대지 않는다.
+ */
+import { Icon } from 'astro-icon/components';
+import AdminLayout from '../components/AdminLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import Button from '@/components/ui/Button.astro';
+import Field from '../components/Field.astro';
+import LocalizedField from '../components/LocalizedField.astro';
+import RepeatableList from '../components/RepeatableList.astro';
+import { L } from '../labels';
+
+const DEGREES = ['BS', 'MS', 'PhD', 'Exchange', 'Other'];
+const EMPLOYMENTS = ['Full-time', 'Intern', 'Contract', 'Freelance', 'Other'];
+const LINK_TYPES = ['github', 'scholar', 'linkedin', 'x', 'email', 'orcid', 'homepage'];
+---
+
+<AdminLayout title={L.nav.profile} current="profile" savebar>
+  <div class="admin-page-head" style="margin-top: calc(-1 * var(--spacing-ext-4))">
+    <span></span>
+    <span>
+      <Button variant="compact-outline" href="/" external>{L.profile.viewHome} (KO)</Button>
+      <Button variant="compact-outline" href="/en/" external>{L.profile.viewHome} (EN)</Button>
+    </span>
+  </div>
+
+  <div class="admin-stack">
+    {/* ---------- 프로필 사진 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.photo}</h2>
+      <div style="display: flex; gap: var(--spacing-ext-5); align-items: center; flex-wrap: wrap">
+        <img class="admin-photo admin-row-hidden" data-photo-img alt="" />
+        <span class="admin-photo-fallback" data-photo-fallback>—</span>
+        <div style="flex: 1 1 260px; min-width: 0">
+          <button type="button" class="admin-drop admin-drop-compact" data-photo-drop>
+            <Icon name="lucide:image" class="admin-nav-icon" aria-hidden="true" />
+            <span>{L.profile.photoReplace}</span>
+            <span class="admin-hint">{L.profile.photoHint}</span>
+          </button>
+          <input class="admin-visually-hidden" type="file" accept="image/*" data-photo-input />
+          <p class="admin-hint" data-photo-name></p>
+        </div>
+      </div>
+    </Card>
+
+    {/* ---------- 기본 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.basic}</h2>
+      <div class="admin-stack">
+        <LocalizedField label="이름" path="name" />
+        <Field
+          label="영문 표기"
+          for="nameEn"
+          path="nameEn"
+          hint="한국어 화면에서 이름 옆에 병기됩니다"
+        >
+          <input class="admin-input" id="nameEn" type="text" data-name="nameEn" />
+        </Field>
+        <LocalizedField label="사진 설명" path="photoAlt" hint="스크린리더가 읽는 문구입니다" />
+        <LocalizedField label="한 줄 소개" path="tagline" max={80} />
+        <LocalizedField label="자기소개" path="bio" max={400} multiline />
+        <div class="admin-grid-2">
+          <Field label="이메일" for="email" path="email">
+            <input class="admin-input" id="email" type="email" data-name="email" />
+          </Field>
+          <Field label="CV 링크" for="cvUrl" path="cvUrl" hint="예: /cv.pdf">
+            <input class="admin-input" id="cvUrl" type="text" data-name="cvUrl" />
+          </Field>
+        </div>
+        <LocalizedField label="위치" path="location" hint="예: Seoul, Korea" />
+      </div>
+    </Card>
+
+    {/* ---------- 학적 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.education}</h2>
+      <RepeatableList path="education" addLabel="학적 추가" emptyNote={L.profile.emptySection}>
+        <div class="admin-field">
+          <label class="admin-label" for="degree">학위</label>
+          <select class="admin-select" id="degree" data-name="degree">
+            {DEGREES.map((degree) => <option value={degree}>{degree}</option>)}
+          </select>
+        </div>
+        <LocalizedField label="학교" path="school" />
+        <LocalizedField label="학과" path="department" />
+        <LocalizedField label="연구실" path="lab" />
+        <LocalizedField label="지도교수" path="advisor" />
+        <div class="admin-field">
+          <label class="admin-label" for="edu-start">시작 (YYYY-MM)</label>
+          <input
+            class="admin-input"
+            id="edu-start"
+            type="text"
+            placeholder="2024-03"
+            data-name="startDate"
+          />
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="edu-end">종료 (YYYY-MM)</label>
+          <input
+            class="admin-input"
+            id="edu-end"
+            type="text"
+            placeholder="2026-02"
+            data-name="endDate"
+          />
+          <label class="admin-check">
+            <input class="admin-check-input" type="checkbox" data-name="ongoing" />
+            {L.profile.enrolledNow}
+          </label>
+        </div>
+        <LocalizedField label="비고" path="note" />
+      </RepeatableList>
+    </Card>
+
+    {/* ---------- 경력 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.career}</h2>
+      <RepeatableList path="career" addLabel="경력 추가" emptyNote={L.profile.emptySection}>
+        <LocalizedField label="회사·기관" path="company" />
+        <LocalizedField label="직함·역할" path="role" />
+        <LocalizedField label="팀·부서" path="team" />
+        <div class="admin-field">
+          <label class="admin-label" for="employment">고용 형태</label>
+          <select class="admin-select" id="employment" data-name="employment">
+            <option value="">(미지정)</option>
+            {EMPLOYMENTS.map((employment) => <option value={employment}>{employment}</option>)}
+          </select>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="career-start">시작 (YYYY-MM)</label>
+          <input
+            class="admin-input"
+            id="career-start"
+            type="text"
+            placeholder="2025-06"
+            data-name="startDate"
+          />
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="career-end">종료 (YYYY-MM)</label>
+          <input class="admin-input" id="career-end" type="text" data-name="endDate" />
+          <label class="admin-check">
+            <input class="admin-check-input" type="checkbox" data-name="ongoing" />
+            {L.profile.workingNow}
+          </label>
+        </div>
+        <LocalizedField label="한 줄 설명" path="description" />
+      </RepeatableList>
+    </Card>
+
+    {/* ---------- 스킬 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.skills}</h2>
+      <p class="admin-hint" style="margin-bottom: var(--spacing-ext-4)">
+        {L.profile.skillsIntro}
+      </p>
+      <RepeatableList path="skillGroups" addLabel="그룹 추가" emptyNote={L.profile.emptySection}>
+        <LocalizedField label="그룹명 (선택)" path="name" hint={L.profile.skillGroupNameHint} />
+        <div class="admin-field">
+          <label class="admin-label" for="skill-items">항목 (Enter로 추가, 항목당 24자)</label>
+          <div class="admin-chips" data-chips="items">
+            <input class="admin-chip-input" id="skill-items" type="text" />
+          </div>
+        </div>
+      </RepeatableList>
+    </Card>
+
+    {/* ---------- 관심 분야 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.interests}</h2>
+      <div class="admin-field" data-field="interests">
+        <label class="admin-label" for="interests">최대 8개. Enter로 추가합니다</label>
+        <div class="admin-chips" data-chips="interests">
+          <input class="admin-chip-input" id="interests" type="text" />
+        </div>
+        <p class="admin-hint">
+          {L.profile.interestLimit} — 언어별로 다르게 쓰려면 <code>src/config/profile.ts</code>에서
+          직접 <code>{'{ ko, en }'}</code>으로 적습니다.
+        </p>
+      </div>
+    </Card>
+
+    {/* ---------- 링크 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.links}</h2>
+      <RepeatableList path="links" addLabel="링크 추가" emptyNote={L.profile.emptySection} max={6}>
+        <div class="admin-field">
+          <label class="admin-label" for="link-type">종류</label>
+          <select class="admin-select" id="link-type" data-name="type">
+            {LINK_TYPES.map((type) => <option value={type}>{type}</option>)}
+          </select>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="link-url">URL</label>
+          <input class="admin-input" id="link-url" type="text" data-name="url" />
+        </div>
+        <LocalizedField label="라벨" path="label" />
+      </RepeatableList>
+    </Card>
+
+    <p class="admin-hint">{L.profile.commentNotice}</p>
+  </div>
+</AdminLayout>
+
+<script>
+  import { initProfile } from '../client/profile';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initProfile();
+</script>

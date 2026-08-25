@@ -1,0 +1,18 @@
+---
+/**
+ * 하단 고정 저장 바.
+ *
+ * 변경이 0건이면 CSS(`[data-dirty]`)로 숨는다. 상태 변화는 `aria-live="polite"`로 알린다.
+ * 단축키 `Cmd/Ctrl+S`는 `client/forms.ts`가 건다.
+ */
+import Button from '@/components/ui/Button.astro';
+import { L } from '../labels';
+---
+
+<div class="admin-savebar" data-savebar data-dirty="false" aria-live="polite">
+  <span class="admin-savebar-count" data-savebar-count></span>
+  <div class="admin-savebar-actions">
+    <Button variant="compact-outline" data-savebar-revert>{L.save.revert}</Button>
+    <Button variant="compact" data-savebar-save>{L.save.save}</Button>
+  </div>
+</div>

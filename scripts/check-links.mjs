@@ -29,16 +29,21 @@ async function walk(dir) {
   return out;
 }
 
-/** 링크가 가리키는 실제 파일이 있는지 */
-async function resolves(href) {
+/**
+ * 링크가 가리키는 실제 파일이 있는지.
+ *
+ * `from`은 링크가 실린 HTML 파일이다. 상대 경로는 그 파일이 놓인 디렉터리를 기준으로 푼다.
+ */
+async function resolves(href, from) {
   const clean = href.split('#')[0].split('?')[0];
   if (clean === '' || clean === '/') return existsSync(path.join(root, 'index.html'));
 
+  const base = clean.startsWith('/') ? root : path.dirname(from);
   const rel = decodeURIComponent(clean.replace(/^\//, ''));
   const candidates = [
-    path.join(root, rel),
-    path.join(root, `${rel}.html`),
-    path.join(root, rel, 'index.html'),
+    path.resolve(base, rel),
+    path.resolve(base, `${rel}.html`),
+    path.resolve(base, rel, 'index.html'),
   ];
 
   for (const candidate of candidates) {
@@ -59,9 +64,16 @@ for (const file of htmlFiles) {
 
   for (const href of hrefs) {
     if (SKIP_PREFIX.some((prefix) => href.startsWith(prefix))) continue;
-    if (!href.startsWith('/')) continue; // 상대 경로는 Astro가 생성하지 않는다
+    // 스킴이 있는 링크(외부, mailto: 등)는 SKIP_PREFIX 밖의 것도 검사 대상이 아니다.
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(href)) continue;
+    /*
+      CRITICAL: 상대 경로도 검사한다.
+      Astro의 레이아웃·컴포넌트는 루트 기준 절대 경로만 만들지만, **글 본문은 사람이 쓴다.**
+      `[텍스트](url)` 같은 목적지가 그대로 통과해 `<a href="url">`이라는 죽은 링크가 배포된
+      적이 있다. 여기서 걸러야 배포 전에 잡힌다.
+    */
     checked += 1;
-    if (!(await resolves(href))) {
+    if (!(await resolves(href, file))) {
       broken.push({ file: path.relative(root, file), href });
     }
   }

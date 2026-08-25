@@ -1,6 +1,16 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+/*
+   CRITICAL: 관리자 콘솔 소스를 Tailwind 클래스 스캔 대상에서 제외한다.
+
+   Tailwind v4는 프로젝트 전체를 훑어 클래스 후보 문자열을 찾는다. `admin/`에는 사이트가
+   쓰지 않는 단어(예: `admin/server/paths.mjs`의 지역 변수 `absolute`)가 있고, 그것이
+   프로덕션 CSS에 유틸리티 규칙으로 그대로 실렸다 — 실측으로 확인한 유출이다.
+   관리자 화면은 `admin/styles/admin.css`에서 이 파일의 시맨틱 변수만 쓰므로
+   Tailwind 유틸리티가 필요 없다. */
+@source not '../../admin';
+
 /* ==========================================================================
    Study Log — 디자인 토큰
    출처: DESIGN.md (Apple / Human Interface Guidelines, verification v2, 2026-07-11)

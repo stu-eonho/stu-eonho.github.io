@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "admin": "astro dev --open /admin",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "check-links": "node scripts/check-links.mjs dist",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "prettier": "3.6.2",
-    "prettier-plugin-astro": "0.14.1"
+    "prettier-plugin-astro": "0.14.1",
+    "yaml": "2.9.0"
   }
 }

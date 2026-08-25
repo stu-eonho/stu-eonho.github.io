@@ -112,28 +112,25 @@ export const PROFILE_PHOTO: ImageMetadata | null = Object.values(photoModules)[0
 
 export const PROFILE: Profile = {
   /** 표기명. 프로필 카드 제목과 저작권 표기에 쓰입니다. */
-  name: { ko: '<이름>', en: '<Name>' },
+  name: { ko: '이언호', en: 'Eonho Lee' },
 
   /** 영문 표기. 비우면 해당 줄만 생략됩니다. */
-  nameEn: '<English Name>',
+  nameEn: 'Eonho Lee',
 
   /** 사진 설명. 스크린리더가 읽는 문구이므로 사진을 넣었다면 반드시 바꾸세요. */
-  photoAlt: { ko: '<프로필 사진 설명>', en: '<Describe the profile photo>' },
+  photoAlt: '',
 
   /** 한 줄 소개 (80자 이내). 이름 바로 아래에 큰 글씨로 나옵니다. */
-  tagline: { ko: '<한 줄 소개>', en: '<One-line introduction>' },
+  tagline: '',
 
   /** 2~3문장 자기소개 (400자 이내). */
-  bio: {
-    ko: '<자기소개 두세 문장. 무엇을 연구하고 무엇에 관심이 있는지 적습니다.>',
-    en: '<Two or three sentences: what you research and what you care about.>',
-  },
+  bio: '',
 
   /** 이메일. 비우면 소셜 아이콘 행에서 이메일 아이콘만 사라집니다. */
-  email: '<you@example.com>',
+  email: 'stu.eonho@gmail.com',
 
   /** 예: "Seoul, Korea". 비우면 해당 줄만 생략됩니다. */
-  location: { ko: '<도시, 국가>', en: '<City, Country>' },
+  location: { ko: '경기도, 대한민국', en: 'Gyeonggi-do, South Korea' },
 
   /**
    * 학적. 최신 항목이 배열 앞에 옵니다.
@@ -142,13 +139,11 @@ export const PROFILE: Profile = {
   education: [
     {
       degree: 'BS',
-      school: { ko: '<학교명>', en: '<University>' },
-      department: { ko: '<학과명>', en: '<Department>' },
-      lab: { ko: '<연구실명>', en: '<Lab>' },
+      school: { ko: '고려대학교', en: 'Korea University' },
+      department: { ko: '컴퓨터학과', en: 'Computer Science and Engineering' },
       advisor: { ko: '<지도교수명>', en: '<Advisor>' },
-      startDate: '2024-03',
-      endDate: null, // 재학 중이면 null → "현재"로 표시됩니다
-      note: { ko: '<비고>', en: '<Note>' },
+      startDate: '2026-03',
+      endDate: null,
     },
   ],
 
@@ -156,41 +151,19 @@ export const PROFILE: Profile = {
    * 경력. 최신 항목이 배열 앞에 옵니다.
    * 배열을 비우면 경력 섹션 전체가 사라집니다 — 경력이 없으면 `career: []`로 두세요.
    */
-  career: [
-    {
-      company: { ko: '<회사·기관명>', en: '<Company / Institution>' },
-      role: { ko: '<직함·역할>', en: '<Job title>' },
-      team: { ko: '<팀·부서>', en: '<Team>' },
-      employment: 'Intern',
-      startDate: '2025-06',
-      endDate: null, // 재직 중이면 null → "현재"로 표시됩니다
-      description: { ko: '<무엇을 했는지 한 줄로>', en: '<One line on what you did>' },
-    },
-  ],
+  career: [{ company: 'AIKU', role: 'Junior', startDate: '2026-07', endDate: null }],
 
   /** 스킬 그룹 (최대 5그룹 권장). 비우면 스킬 섹션 전체가 사라집니다. */
-  skillGroups: [
-    {
-      // 그룹명과 항목은 대개 두 언어에서 같습니다 — 그럴 땐 문자열 하나로 둡니다.
-      name: '<Group name>',
-      items: ['<Skill 1>', '<Skill 2>'],
-    },
-  ],
+  skillGroups: [{ name: '', items: ['Python'] }],
 
   /** 연구 관심 분야 (최대 8개). 비우면 관심 분야 섹션 전체가 사라집니다. */
-  interests: [{ ko: '<관심 분야>', en: '<Research interest>' }],
+  interests: ['World Model'],
 
   /**
    * 외부 링크 (최대 6개).
    * 비우면 소셜 아이콘 행 전체가 사라집니다.
    */
-  links: [
-    {
-      type: 'github',
-      url: '<https://github.com/username>',
-      label: 'GitHub',
-    },
-  ],
+  links: [{ type: 'github', url: '<https://github.com/username>', label: 'GitHub' }],
 
   /**
    * CV 링크. 게시하려면 `public/cv.pdf`에 파일을 넣고 '/cv.pdf'로 두세요.

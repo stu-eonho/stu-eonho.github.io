@@ -1,0 +1,70 @@
+---
+/**
+ * 반복 행 컨테이너 + `<template>`.
+ *
+ * 행 마크업은 `<template>` 안에 한 벌만 두고 `client/repeatable.ts`가 복제한다.
+ * 근거: UI 프레임워크 없이(바닐라 TS) 반복 행을 다루는 가장 단순한 방법이며, 행 마크업이
+ * 서버 렌더 결과와 클라이언트 복제본에서 갈라지지 않는다.
+ */
+import { Icon } from 'astro-icon/components';
+import Button from '@/components/ui/Button.astro';
+import { L } from '../labels';
+
+interface Props {
+  /** 배열 경로. 예: `career`, `education` */
+  path: string;
+  /** 추가 버튼 라벨 */
+  addLabel: string;
+  /** 배열이 비었을 때 보여 줄 안내 */
+  emptyNote?: string;
+  /** 항목 수 상한. 넘으면 추가 버튼이 비활성된다 */
+  max?: number;
+}
+
+const { path, addLabel, emptyNote, max } = Astro.props;
+---
+
+<div class="admin-repeatable" data-repeatable={path} data-max={max}>
+  <div data-rows></div>
+
+  {
+    emptyNote && (
+      <p class="admin-empty-note admin-row-hidden" data-empty-note>
+        {emptyNote}
+      </p>
+    )
+  }
+
+  <div>
+    <Button variant="compact-outline" data-repeat-add>{addLabel}</Button>
+  </div>
+
+  <template data-row-template>
+    <div class="admin-row" data-row>
+      <div class="admin-row-tools">
+        <button type="button" class="admin-icon-button" data-row-up aria-label={L.settings.moveUp}>
+          <Icon name="lucide:arrow-up" class="admin-nav-icon" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="admin-icon-button"
+          data-row-down
+          aria-label={L.settings.moveDown}
+        >
+          <Icon name="lucide:arrow-down" class="admin-nav-icon" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="admin-icon-button"
+          data-row-remove
+          aria-label={L.settings.remove}
+        >
+          <Icon name="lucide:trash-2" class="admin-nav-icon" aria-hidden="true" />
+        </button>
+      </div>
+      <div class="admin-grid-2" data-row-fields>
+        <slot />
+      </div>
+    </div>
+  </template>
+</div>

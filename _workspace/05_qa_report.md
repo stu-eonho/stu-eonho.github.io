@@ -98,9 +98,19 @@
 
 없음.
 
-### 브라우저로만 확인 가능한 항목 (미실행)
+### 배포 검증 (2026-08-21)
 
-- 375px 헤더에서 액션 4종(검색·언어·테마·메뉴)의 실제 줄바꿈 여부.
-  400px 이하에서 `gap: 0`을 적용해 4 × 44px = 176px + 브랜드가 331px 안에 들어오도록 계산해 두었으나 실측은 하지 않았다.
-- 언어 토글 클릭 시의 실제 이동(정적 링크이므로 `check-links`가 대상 파일 존재를 이미 확인함).
-- Lighthouse 재측정.
+`stu-eonho.github.io`로 초기 push. Actions build 38초 / deploy 10초 통과.
+`/`, `/en`, `/paper-review`, `/en/notes/intl-date-format`, `/en/rss.xml` 전부 200.
+라이브에서 확인: ko 홈 `최근 글` + 토글 `English로 보기`, en 홈 `<html lang="en">` + `Recent posts` + 토글 `View in 한국어`.
+
+`.gitattributes` 추가 — 작업은 Windows, 빌드는 Ubuntu 러너다. CRLF가 리포에 섞이면 diff가 파일 전체로 부풀고 셸 스크립트가 깨진다.
+
+### 브라우저 확인
+
+- **375px 헤더 액션 4종(검색·언어·테마·메뉴) — 사용자 실측 완료, 이상 없음.**
+  400px 이하 `gap: 0`으로 4 × 44px = 176px + 브랜드가 들어간다.
+
+### 미실행
+
+- Lighthouse 재측정 (다국어 도입 전 수치만 있다).
