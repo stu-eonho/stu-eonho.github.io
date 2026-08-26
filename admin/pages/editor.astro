@@ -371,6 +371,29 @@ const TOOLS = [
       <label class="admin-label" for="image-alt">{L.editor.imageAlt}</label>
       <input class="admin-input" id="image-alt" type="text" data-image-alt />
     </div>
+    <div class="admin-field">
+      <label class="admin-label" for="image-width">{L.editor.imageWidth}</label>
+      <input
+        class="admin-input"
+        id="image-width"
+        type="number"
+        min="1"
+        max="9999"
+        data-image-width
+        placeholder={L.editor.imageWidthPlaceholder}
+      />
+      <p class="admin-hint">{L.editor.imageWidthHint}</p>
+    </div>
+    <div class="admin-field">
+      <label class="admin-label" for="image-align">{L.editor.imageAlign}</label>
+      <select class="admin-select" id="image-align" data-image-align>
+        <option value="">{L.editor.alignDefault}</option>
+        <option value="left">{L.editor.alignLeft}</option>
+        <option value="center">{L.editor.alignCenter}</option>
+        <option value="right">{L.editor.alignRight}</option>
+      </select>
+      <p class="admin-hint">{L.editor.imageAlignHint}</p>
+    </div>
   </div>
   <div class="admin-dialog-actions">
     <Button variant="compact-outline" data-dialog-cancel>{L.posts.cancel}</Button>

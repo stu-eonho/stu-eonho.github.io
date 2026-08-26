@@ -107,8 +107,31 @@ export async function renderPreview({ body }) {
   });
 
   return {
-    html,
+    html: rewriteAssetSrc(html),
     headings: result.metadata?.headings ?? [],
     strippedBlocks: stripped.length,
   };
+}
+
+/**
+ * 프리뷰 전용 이미지 경로 보정.
+ *
+ * 본문의 `../../../assets/x.png`는 **글 파일 기준** 상대 경로다. 빌드에서는 Astro의 이미지
+ * 파이프라인이 `/_astro/…`로 바꾸지만, 프리뷰는 그 파이프라인을 타지 않으므로 문자열이 그대로
+ * 남는다. 관리자 페이지(`/admin/posts/edit`)에서 그 경로는 `/assets/x.png`로 풀리고 —
+ * dev 서버가 서빙하지 않는 자리라 **404로 깨져 보인다**(실측).
+ *
+ * dev 서버가 실제로 주는 자리(`/src/assets/…`)로 바꿔 준다.
+ *
+ * CRITICAL: 프리뷰에만 적용한다. 파일에 저장되는 본문은 건드리지 않는다 — 저장된 경로는
+ * 빌드가 해석해야 하는 값이다.
+ *
+ * @param {string} html
+ */
+function rewriteAssetSrc(html) {
+  return html.replace(/(<img\b[^>]*?\bsrc=")([^"]+)(")/g, (whole, before, src, after) => {
+    if (!src.startsWith('.') || !src.includes('/assets/')) return whole;
+    const name = src.split('/assets/').pop();
+    return `${before}/src/assets/${name.split('/').map(encodeURIComponent).join('/')}${after}`;
+  });
 }

@@ -28,11 +28,8 @@ export interface SiteConfig {
 }
 
 export const SITE: SiteConfig = {
-  title: 'Study Log',
-  description: {
-    ko: '읽은 논문과 진행한 프로젝트, 그리고 공부 노트를 기록하는 개인 연구 로그입니다.',
-    en: 'A personal research log of paper reviews, project write-ups, and study notes.',
-  },
+  title: 'Pit Stop for Ideas | Eonho Lee',
+  description: { ko: '논문, 프로젝트, 노트를 기록합니다.', en: 'Papers, projects, and notes documented here.' },
   url: import.meta.env.PUBLIC_SITE_URL ?? 'https://stu-eonho.github.io',
   base: '/',
   // 카테고리 순서는 categories.ts에서 파생한다. 하드코딩하지 않는다.

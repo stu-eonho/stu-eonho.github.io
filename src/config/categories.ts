@@ -35,10 +35,7 @@ export const CATEGORIES = [
     id: 'paper-review',
     label: 'Paper Review',
     labelKo: '논문 리뷰',
-    description: {
-      ko: '읽은 논문을 정리하고 핵심 아이디어와 한계를 기록합니다.',
-      en: 'Notes on papers I have read — the core idea, and where it falls short.',
-    },
+    description: { ko: '읽은 논문을 정리하고 기록합니다.', en: "Papers I've read are organized and documented here." },
     icon: 'lucide:file-text',
     order: 1,
     metaPanel: 'paper',
@@ -47,10 +44,7 @@ export const CATEGORIES = [
     id: 'project',
     label: 'Project',
     labelKo: '프로젝트',
-    description: {
-      ko: '직접 만들고 운영한 프로젝트의 과정과 결과를 남깁니다.',
-      en: 'Projects I built and ran, from the process to what came out of it.',
-    },
+    description: { ko: '진행한 프로젝트를 기록합니다.', en: "Projects I've worked on are documented here." },
     icon: 'lucide:folder-git-2',
     order: 2,
     metaPanel: 'project',
@@ -58,11 +52,8 @@ export const CATEGORIES = [
   {
     id: 'notes',
     label: 'Notes',
-    labelKo: '학습 노트',
-    description: {
-      ko: '논문과 프로젝트 사이에 남는 짧은 학습 기록입니다.',
-      en: 'Short study notes that fall between the papers and the projects.',
-    },
+    labelKo: '노트',
+    description: { ko: '에세이 등 여러 종류의 글을 올립니다.', en: 'Various types of posts are shared here, including essays.' },
     icon: 'lucide:notebook-pen',
     order: 3,
     metaPanel: 'none',

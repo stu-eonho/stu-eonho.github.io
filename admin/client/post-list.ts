@@ -110,12 +110,25 @@ function renderRows(): void {
       );
     }
 
-    const title = el('td', { class: 'admin-td' }, [
-      el('div', { class: 'admin-cell-title' }, [
-        el('a', { class: 'admin-link', href: editorHref(item.id), text: item.title }),
-        el('span', { class: 'admin-path', text: item.path }),
-      ]),
+    const titleCell = el('div', { class: 'admin-cell-title' }, [
+      el('a', { class: 'admin-link', href: editorHref(item.id), text: item.title }),
+      el('span', { class: 'admin-path', text: item.path }),
     ]);
+
+    /*
+      CRITICAL: 오류 내용을 툴팁에만 두지 않는다. 스키마가 깨진 글은 dev 서버와 빌드를
+      함께 죽이는데, 무엇이 잘못됐는지 화면에서 바로 읽을 수 없으면 고칠 수가 없다.
+    */
+    for (const issue of item.issues) {
+      titleCell.append(
+        el('span', { class: 'admin-error-inline' }, [
+          el('span', { class: 'admin-mono', text: `${issue.field}: ` }),
+          el('span', { text: issue.message }),
+        ]),
+      );
+    }
+
+    const title = el('td', { class: 'admin-td' }, [titleCell]);
 
     const translation = el('td', { class: 'admin-td' });
     if (item.hasTranslation && item.translationId) {

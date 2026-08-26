@@ -412,7 +412,11 @@ export async function initEditor(): Promise<void> {
     await loadAssets();
 
     const altInput = qs<HTMLInputElement>('[data-image-alt]', dialog);
+    const widthInput = qs<HTMLInputElement>('[data-image-width]', dialog);
+    const alignInput = qs<HTMLSelectElement>('[data-image-align]', dialog);
     if (altInput) altInput.value = '';
+    if (widthInput) widthInput.value = '';
+    if (alignInput) alignInput.value = '';
 
     const confirmed = await openDialog(dialog);
     if (!confirmed) return;
@@ -423,8 +427,21 @@ export async function initEditor(): Promise<void> {
       toast('error', L.editor.noImages);
       return;
     }
+
     const alt = (altInput?.value ?? '').trim();
-    insertAtCursor(`![${alt}](../../../assets/${name})`);
+    /*
+      표시 옵션은 alt 끝의 `|400|center` 표기로 싣는다
+      (`markdown.config.mjs`의 `rehypeImageSize`가 읽는다).
+      고르지 않은 항목은 표기를 아예 넣지 않는다 — 원본 크기·기본 흐름이 기본값이다.
+    */
+    const options: string[] = [];
+    const width = Number((widthInput?.value ?? '').trim());
+    if (Number.isInteger(width) && width > 0) options.push(String(width));
+    const align = alignInput?.value ?? '';
+    if (align !== '') options.push(align);
+
+    const label = options.length > 0 ? [alt, ...options].join('|') : alt;
+    insertAtCursor(`![${label}](../../../assets/${name})`);
   }
 
   qs('[data-cover-clear]')?.addEventListener('click', () => {

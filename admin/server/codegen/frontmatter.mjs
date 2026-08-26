@@ -48,6 +48,13 @@ const DEFAULTS = {
   toc: true,
 };
 
+/**
+ * 스키마가 기본값 없이 요구하는 키. 값이 비어도 키를 남긴다.
+ * `slug`·`category`는 경로에서 오고 `date`는 날짜 정규화를 거치므로 실질 대상은
+ * `title`·`description`이지만, 계약을 명시적으로 적어 둔다.
+ */
+const REQUIRED_KEYS = new Set(['slug', 'title', 'description', 'category', 'date']);
+
 /** 플로우(한 줄) 배열로 낼 키. */
 const FLOW_ARRAYS = new Set(['tags', 'stack']);
 
@@ -135,6 +142,18 @@ export function normalizeFrontmatter(frontmatter) {
     if (key in DEFAULTS && raw === DEFAULTS[/** @type {keyof typeof DEFAULTS} */ (key)]) continue;
     // 빈 태그 배열은 기본값이므로 키째로 생략
     if (key === 'tags' && (!Array.isArray(raw) || raw.length === 0)) continue;
+
+    /*
+      CRITICAL: 스키마가 요구하는 키는 값이 비어도 **생략하지 않는다.**
+      생략하면 "빈 값"이 "키 없음"으로 바뀌고, 다시 읽을 때 `Required`로 실패해
+      dev 서버와 빌드가 함께 죽는다 — 고칠 도구(관리자)마저 못 여는 교착이 된다.
+      스키마의 `.min(1)`이 먼저 막지만, 그 앞을 어떤 경로로 지나오더라도 여기서
+      파일이 깨지지는 않게 둔다.
+    */
+    if (REQUIRED_KEYS.has(key)) {
+      ordered[key] = typeof raw === 'string' ? raw : (prune(raw) ?? '');
+      continue;
+    }
 
     const cleaned = prune(raw);
     if (cleaned === undefined) continue;

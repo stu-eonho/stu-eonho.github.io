@@ -766,6 +766,17 @@
   text-decoration: underline;
 }
 
+/* 목록 행 안에 붙는 스키마 오류 문구. 색만이 아니라 좌측 바로도 구분한다. */
+.admin-error-inline {
+  display: block;
+  margin-top: 2px;
+  padding-left: var(--spacing-ext-2);
+  border-left: 2px solid var(--accent);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  color: var(--fg-secondary);
+}
+
 .admin-path {
   font-family: var(--font-mono);
   font-size: var(--text-caption);

@@ -33,8 +33,25 @@ export function postSchema<TImage extends z.ZodTypeAny>({ image }: { image: () =
        * 번역본이 없는 언어에서는 원문이 그대로 노출되고 안내 배너가 붙는다.
        */
       lang: z.enum(LANG_IDS).default(DEFAULT_LANG),
-      title: z.string().max(120, 'title은 120자 이내여야 합니다'),
-      description: z.string().max(200, 'description은 200자 이내여야 합니다'),
+      /**
+       * CRITICAL: `.min(1)`이 있어야 한다. 빈 문자열도 `z.string()`을 통과하는데,
+       * 프론트매터 직렬화는 빈 값을 키째로 생략한다 — 그 결과 `description` 키가 없는
+       * 파일이 만들어지고, 다시 읽을 때 "Required"로 실패해 **dev 서버와 빌드가 함께
+       * 죽는다.** 실제로 그렇게 죽었다. 여기서 막아야 관리자가 저장 전에 잡는다.
+       *
+       * `.trim()`이 먼저 오는 이유: 공백만 있는 값(`'   '`)은 `.min(1)`을 통과한다.
+       * 다듬은 뒤에 길이를 재야 "빈 제목"이 실제로 막힌다.
+       */
+      title: z
+        .string()
+        .trim()
+        .min(1, 'title은 비울 수 없습니다')
+        .max(120, 'title은 120자 이내여야 합니다'),
+      description: z
+        .string()
+        .trim()
+        .min(1, 'description은 비울 수 없습니다')
+        .max(200, 'description은 200자 이내여야 합니다'),
       category: z.enum(CATEGORY_IDS, {
         message: `category는 다음 중 하나여야 합니다: ${CATEGORY_IDS.join(', ')}`,
       }),
