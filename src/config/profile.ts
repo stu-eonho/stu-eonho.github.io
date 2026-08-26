@@ -151,7 +151,14 @@ export const PROFILE: Profile = {
    * 경력. 최신 항목이 배열 앞에 옵니다.
    * 배열을 비우면 경력 섹션 전체가 사라집니다 — 경력이 없으면 `career: []`로 두세요.
    */
-  career: [{ company: 'AIKU', role: 'Junior', startDate: '2026-07', endDate: null }],
+  career: [
+    {
+      company: { ko: 'AIKU, 고려대학교 딥러닝 학회', en: "AIKU, Korea University's Deep Learning Society" },
+      role: 'Junior',
+      startDate: '2026-07',
+      endDate: null,
+    },
+  ],
 
   /** 스킬 그룹 (최대 5그룹 권장). 비우면 스킬 섹션 전체가 사라집니다. */
   skillGroups: [{ name: '', items: ['Python'] }],
