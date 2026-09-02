@@ -19,9 +19,11 @@ interface Props {
   headings: MarkdownHeading[];
   readingTime: number;
   siblings: Siblings;
+  /** 본문에 수식이 있는가. 판정은 PostDetailView가 한다(본문 + 프론트매터) */
+  hasMath: boolean;
 }
 
-const { post, headings, readingTime, siblings } = Astro.props;
+const { post, headings, readingTime, siblings, hasMath } = Astro.props;
 const { lang, t } = i18n(Astro.url);
 const category = getCategory(post.data.category);
 
@@ -60,7 +62,7 @@ const jsonLd = articleJsonLd({
   publishedTime={post.data.date}
   modifiedTime={post.data.updated}
   tags={post.data.tags}
-  katex={post.data.math}
+  katex={hasMath}
   jsonLd={jsonLd}
   canonicalLang={fallback ? contentLang : undefined}
 >
@@ -132,6 +134,8 @@ const jsonLd = articleJsonLd({
   </div>
 
   <script>
+    import { enhanceTables } from '@/scripts/table-presentation';
+
     // 문구는 서버가 현재 언어로 렌더한 본문 컨테이너의 data-* 속성에서 읽는다.
     const body = document.querySelector<HTMLElement>('.article-body');
     const COPY = body?.dataset.copy ?? '';
@@ -139,6 +143,9 @@ const jsonLd = articleJsonLd({
     const COPY_FAILED = body?.dataset.copyFailed ?? '';
     const COPY_LABEL = body?.dataset.copyLabel ?? '';
     const ANCHOR_LABEL = body?.dataset.anchorLabel ?? '';
+
+    // dev 서버가 마크다운 설정 변경 전 프로세서를 잡고 있어도 설정 펜스를 노출하지 않는다.
+    if (body) enhanceTables(body);
 
     // ---- h2/h3 앵커 링크 ----
     for (const heading of document.querySelectorAll<HTMLElement>('.article-body :is(h2, h3)[id]')) {
@@ -181,16 +188,6 @@ const jsonLd = articleJsonLd({
           }, 1500);
         }
       });
-    }
-
-    // ---- 표 가로 스크롤 컨테이너 ----
-    // CRITICAL: 표가 페이지를 가로로 밀지 않게 한다.
-    for (const table of document.querySelectorAll<HTMLTableElement>('.article-body table')) {
-      if (table.parentElement?.classList.contains('table-scroll')) continue;
-      const scroller = document.createElement('div');
-      scroller.className = 'table-scroll';
-      table.parentNode?.insertBefore(scroller, table);
-      scroller.appendChild(table);
     }
 
     // ---- 외부 링크 안전 속성 ----

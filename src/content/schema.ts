@@ -35,7 +35,7 @@ export function postSchema<TImage extends z.ZodTypeAny>({ image }: { image: () =
       lang: z.enum(LANG_IDS).default(DEFAULT_LANG),
       /**
        * CRITICAL: `.min(1)`이 있어야 한다. 빈 문자열도 `z.string()`을 통과하는데,
-       * 프론트매터 직렬화는 빈 값을 키째로 생략한다 — 그 결과 `description` 키가 없는
+       * 프론트매터 직렬화는 빈 값을 키째로 생략한다 — 그 결과 `title` 키가 없는
        * 파일이 만들어지고, 다시 읽을 때 "Required"로 실패해 **dev 서버와 빌드가 함께
        * 죽는다.** 실제로 그렇게 죽었다. 여기서 막아야 관리자가 저장 전에 잡는다.
        *
@@ -47,11 +47,21 @@ export function postSchema<TImage extends z.ZodTypeAny>({ image }: { image: () =
         .trim()
         .min(1, 'title은 비울 수 없습니다')
         .max(120, 'title은 120자 이내여야 합니다'),
+      /**
+       * 선택 필드다. 비워 두면 메타 설명·OG·RSS가 사이트 기본 설명으로 대체되고
+       * 카드·글 머리의 설명 문단은 렌더되지 않는다.
+       *
+       * CRITICAL: `.optional()`만 붙이면 부족하다. 빈 문자열(`''`)과 공백만 있는 값도
+       * `z.string()`을 통과해 `<p>`가 빈 채로 그려지고 OG 설명이 빈 문자열이 된다.
+       * `.transform`으로 빈 값을 `undefined`로 접어 "없음"의 표현을 하나로 만든다 —
+       * 그래야 소비 지점이 `?? 기본값` 하나로 끝난다.
+       */
       description: z
         .string()
         .trim()
-        .min(1, 'description은 비울 수 없습니다')
-        .max(200, 'description은 200자 이내여야 합니다'),
+        .max(200, 'description은 200자 이내여야 합니다')
+        .optional()
+        .transform((value) => (value ? value : undefined)),
       category: z.enum(CATEGORY_IDS, {
         message: `category는 다음 중 하나여야 합니다: ${CATEGORY_IDS.join(', ')}`,
       }),

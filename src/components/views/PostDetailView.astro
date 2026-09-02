@@ -17,11 +17,27 @@ interface Props {
 
 const { post } = Astro.props;
 const { lang } = i18n(Astro.url);
-const { Content, headings } = await render(post);
+const { Content, headings, remarkPluginFrontmatter } = await render(post);
+
+/**
+ * KaTeX CSS를 실을지.
+ *
+ * CRITICAL: 프론트매터의 `math`만 보면 안 된다. 본문에 수식을 쓰고 그 값을 켜지 않으면
+ * KaTeX가 낸 MathML과 HTML 두 벌이 **나란히 보인다**(숨기는 주체가 그 CSS다).
+ * `markdown.config.mjs`의 `remarkDetectMath`가 본문을 보고 켜 주며, 프론트매터 값은
+ * 수동 강제용으로 남겨 함께 본다.
+ */
+const hasMath = post.data.math || remarkPluginFrontmatter?.math === true;
 const siblings = getSiblings(post, postsForLang(await getPublishedPosts(), lang));
 const readingTime = estimateReadingTime(post.body);
 ---
 
-<PostLayout post={post} headings={headings} readingTime={readingTime} siblings={siblings}>
+<PostLayout
+  post={post}
+  headings={headings}
+  readingTime={readingTime}
+  siblings={siblings}
+  hasMath={hasMath}
+>
   <Content />
 </PostLayout>

@@ -1069,6 +1069,44 @@
   color: var(--fg);
 }
 
+.admin-table-dialog {
+  width: min(880px, calc(100vw - 2 * var(--spacing-ext-5)));
+}
+
+.admin-table-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-ext-3);
+}
+
+.admin-table-cell-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.admin-table-cell-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--table-columns), minmax(132px, 1fr));
+  gap: 1px;
+  min-width: max-content;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--hairline-strong);
+}
+
+.admin-table-cell-input {
+  min-width: 132px;
+  border: none;
+  border-radius: 0;
+}
+
+.admin-table-cell-input[data-table-header-cell='true'] {
+  background: var(--panel);
+  font-weight: 600;
+}
+
 .admin-preview {
   position: relative;
   min-height: 400px;
@@ -1086,6 +1124,20 @@
   padding-bottom: var(--spacing-ext-3);
   margin-bottom: var(--spacing-ext-3);
   border-bottom: 1px solid var(--hairline);
+}
+
+.admin-preview-sync {
+  min-height: 28px;
+  color: var(--fg-muted);
+  font-size: var(--text-caption);
+}
+
+.admin-preview-scroll {
+  min-height: 400px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-inline-end: var(--spacing-ext-2);
 }
 
 .admin-toc-chip {

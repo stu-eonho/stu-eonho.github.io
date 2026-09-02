@@ -100,8 +100,17 @@ function adminApiPlugin({ root, logger }) {
     apply: 'serve',
     /** @param {any} server */
     configureServer(server) {
-      // 핸들러는 요청 시점에 동적으로 불러온다. 인테그레이션 로딩 비용을 dev 기동에
-      // 얹지 않고, 핸들러 코드를 고쳤을 때 서버 재시작 없이 반영되게 한다.
+      // 핸들러는 요청 시점에 동적으로 불러온다 — 인테그레이션 로딩 비용을 dev 기동에
+      // 얹지 않기 위해서다.
+      //
+      // CRITICAL: 이 import는 Node의 ESM 캐시를 탄다. `admin/server/**` 코드를 고쳐도
+      // **프로세스를 다시 띄우기 전에는 반영되지 않는다.** `astro dev stop` 후 다시
+      // 시작해야 한다 — 파일 저장으로 일어나는 Astro/Vite 재시작은 같은 프로세스 안에서
+      // 일어나므로 이 캐시를 비우지 못한다(실측).
+      //
+      // 위험한 이유는 "안 바뀜"이 아니라 **반쪽만 바뀜**이다. `src/**`(스키마·설정)는
+      // Vite의 ssrLoadModule을 타서 즉시 갱신되므로, 새 스키마 + 옛 직렬화기 조합으로
+      // 돌아 파일에 이상한 값이 남을 수 있다. 2026-08-26에 실제로 그랬다.
       /**
        * @param {import('node:http').IncomingMessage} req
        * @param {import('node:http').ServerResponse} res

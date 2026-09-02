@@ -437,10 +437,14 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
 
 | 겹 | 위치 | 내용 |
 | -- | ---- | ---- |
-| 1 | `src/content/schema.ts` | `title`·`description`에 `.trim().min(1)`. 단일 진실 공급원이 거절하므로 관리자가 저장 전에 필드 오류로 표시한다 |
-| 2 | `codegen/frontmatter.mjs` | `REQUIRED_KEYS`(slug·title·description·category·date)는 값이 비어도 **키를 남긴다**. "빈 값"이 "키 없음"으로 바뀌지 않게 한다 |
+| 1 | `src/content/schema.ts` | `title`에 `.trim().min(1)`. 단일 진실 공급원이 거절하므로 관리자가 저장 전에 필드 오류로 표시한다 |
+| 2 | `codegen/frontmatter.mjs` | `REQUIRED_KEYS`(slug·title·category·date)는 값이 비어도 **키를 남긴다**. "빈 값"이 "키 없음"으로 바뀌지 않게 한다 |
 
 `.trim()`이 `.min(1)` 앞에 와야 한다 — 공백만 있는 값(`'   '`)은 `.min(1)`을 통과한다(실측).
+
+**2026-08-26 갱신 — `description`은 이 표에서 빠졌다.** 사용자 요청으로 선택 필드가 됐다
+(§18). 사고의 사슬 3·4단계는 "필수인데 키가 사라진다"가 원인이었으므로, 필드가 선택이 되면
+사슬 자체가 성립하지 않는다 — 키가 없어도 읽기가 성공한다. `title`은 그대로 필수다.
 
 **부수 개선:** 목록의 "오류" 배지가 메시지를 `title` 툴팁에만 담고 있었다. 스키마가 깨진 글은
 사이트 전체를 내리는데 무엇이 잘못됐는지 화면에서 읽을 수 없으면 고칠 수가 없다 —
@@ -517,3 +521,80 @@ dev 서버가 반복적인 콘텐츠·설정 재작성으로 상태가 어긋나
 그래서 검사는 **배치마다 dev 서버를 새로 띄우고 돌린다.** 카테고리 추가가 재시작을 요구하는
 것은 스펙이 이미 명시한 동작이며(§11 화면 안내), 사람이 글을 쓰는 정상 사용에서는 이 조건이
 만들어지지 않는다.
+
+
+---
+
+## 18. `description`을 선택 필드로 전환 (2026-08-26, 사용자 요청)
+
+**요청:** "계속 Description을 적으라고 해... 필수 아니게 해줘."
+
+§16에서 `description`을 필수로 만든 것은 **빈 값이 파일을 깨뜨리는 것**을 막기 위해서였지,
+설명이 없는 글이 존재할 수 없어서가 아니었다. 필드를 선택으로 바꾸면 그 사고 경로는
+사라진다 — 키가 없어도 읽기가 성공하기 때문이다. 그래서 §16의 안전성을 잃지 않는다.
+
+**"없음"의 표현은 하나여야 한다.** `.optional()`만 붙이면 빈 문자열 `''`과 공백뿐인 값이
+그대로 남아 `<p>`가 빈 채로 그려지고 OG 설명이 빈 문자열이 된다. 스키마에서
+`.trim().max(200).optional().transform(v => v ? v : undefined)`로 빈 값을 `undefined`로
+접었다. 이후 모든 소비 지점은 `undefined` 하나만 다루면 된다.
+
+| 위치 | 변경 |
+| ---- | ---- |
+| `src/content/schema.ts` | `.min(1)` 제거 → `.optional()` + 빈 값 접기 |
+| `admin/server/codegen/frontmatter.mjs` | `REQUIRED_KEYS`에서 `description` 제거 → 비면 키째로 사라진다 |
+| `PostCard.astro` / `PostMetaHeader.astro` | 설명이 있을 때만 `<p>`를 낸다 (빈 문단·빈 줄 간격 방지) |
+| `src/lib/seo.ts` | `ArticleJsonLdInput.description`을 선택으로. 없으면 JSON-LD에서 키째로 빠진다 |
+| `admin/labels.ts`, `admin/pages/editor.astro` | 라벨 "설명 (선택)" + 비웠을 때 무슨 일이 생기는지 힌트 |
+
+`meta description`·`og:description`·`twitter:description`은 `buildSeo`가 이미
+`input.description?.trim() || SITE.description[lang]`로 처리하고 있어 손대지 않았다 —
+설명 없는 글은 사이트 기본 설명으로 대체된다. RSS는 `description` 요소가 선택이라 그대로 빠진다.
+
+**검증(실측):** 설명 없는 글로 빌드 성공(26페이지) · 상세에 `post-desc` 문단 0개 ·
+목록 카드에 설명 줄 없음 · `meta description`이 사이트 기본 설명으로 대체 ·
+Article JSON-LD에 `description` 키 없음 · RSS item에 `<description>` 없음 ·
+직렬화가 `''`와 `'   '`를 키째로 생략 · 공백뿐인 `title`은 여전히 거절 ·
+201자 `description`은 여전히 거절 · `astro check` 0오류/0경고.
+
+---
+
+## 19. dev 서버 재시작이 필요한 두 지점 (2026-08-26, 사고 분석)
+
+**증상:** 사용자가 설명에 `1`을 넣고 저장 → 화면에 `1`. 다시 지우고 저장 → **화면에 `1`이
+그대로.** 편집기 글자 수는 `0 / 200`이었고 디스크의 파일은 `description: ''`였다.
+
+**세 모듈이 서로 다른 시점의 코드로 돌고 있었다.** 사용자의 dev 서버는 `description`을
+선택 필드로 바꾸기 **전에** 떠 있었다.
+
+| 모듈 | 로딩 경로 | 그때 상태 |
+| --- | --- | --- |
+| `src/content/schema.ts` (관리자 검증기) | `server.ssrLoadModule` | **새 코드** — 빈 설명을 통과시킴 |
+| `admin/server/codegen/frontmatter.mjs` | Node `import()` | **옛 코드** — `REQUIRED_KEYS`에 description이 남아 `''`를 키째로 보존 |
+| 콘텐츠 컬렉션이 붙든 스키마 | dev 기동 시 1회 | **옛 코드** — `.min(1)`이라 `description: ''`를 거절, 마지막 성공본(`1`)을 계속 서빙 |
+
+즉 "저장은 됐는데 화면이 안 바뀐다"가 아니라 **세 벌이 섞여 돌았다.**
+
+**실측으로 확인한 사실:**
+
+| 확인 항목 | 결과 |
+| --- | --- |
+| `admin/server/**`가 파일 저장으로 갱신되는가 | **아니오.** 모듈 최상위에 `console.error` 프로브를 넣고 재시작·API 호출 — 로그 없음 |
+| Astro/Vite 자동 재시작이 Node 캐시를 비우는가 | **아니오.** 재시작 전후 pid 동일(31892) |
+| `src/content/schema.ts` 변경이 dev 서버를 재시작시키는가 | **아니오.** 로그에 재시작 흔적 없음 |
+| `addWatchFile`로 `admin/server/**`를 감시하면 해결되는가 | **아니오.** 재시작은 일어나지만 같은 프로세스라 Node 캐시가 그대로 — 시도 후 되돌림 |
+| 완전히 껐다 켠 뒤 저장 왕복 | **정상.** 아래 참조 |
+
+**결론:** 이 두 지점은 `astro dev stop` 후 재시작만이 답이다. 고칠 수단이 없으므로
+**문서화**했다 — README §2 "dev 서버를 완전히 껐다 켜야 하는 경우"와
+`admin/integration.mjs`의 `configureServer` 주석. 기존 주석은 "핸들러 코드를 고쳤을 때
+서버 재시작 없이 반영된다"고 **틀린 말**을 하고 있었다. 그 주석이 이 사고를 늦게 찾게 했다.
+
+**정상 동작 검증(껐다 켠 서버, 관리자 API 왕복 2회):**
+
+| 단계 | 파일 | 화면 |
+| --- | --- | --- |
+| `description: "1"` 저장 | `description: '1'` | `1` |
+| `description: ""` 저장 | **키 자체가 사라짐** | 설명 문단 없음 |
+
+글 상세의 `post-desc`도 요소 없이 CSS 규칙만 남는 것을 확인했다.
+

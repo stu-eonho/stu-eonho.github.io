@@ -3,6 +3,7 @@ import Button from '@/components/ui/Button.astro';
 import { formatLong } from '@/lib/date';
 import { arxivUrl, doiUrl } from '@/lib/seo';
 import type { Post } from '@/lib/posts';
+import { formatAuthors, PANEL_AUTHOR_LIMIT } from '@/lib/paper';
 import { i18n } from '@/config/i18n';
 
 /**
@@ -19,13 +20,8 @@ interface Props {
 const { paper } = Astro.props;
 const { lang, t } = i18n(Astro.url);
 
-// 4명 초과 시 앞 4명 + "외 N명"으로 축약한다.
-const shownAuthors = paper.authors.slice(0, 4);
-const restCount = paper.authors.length - shownAuthors.length;
-const authorLine =
-  restCount > 0
-    ? `${shownAuthors.join(', ')} ${t.paper.andMore(restCount)}`
-    : shownAuthors.join(', ');
+// 4명 초과 시 앞 4명 + "외 N명"으로 축약한다. 규칙은 카드와 공유한다(@/lib/paper).
+const authorLine = formatAuthors(paper.authors, t.paper.andMore, PANEL_AUTHOR_LIMIT);
 
 const links = [
   paper.arxivId && { label: 'arXiv', href: arxivUrl(paper.arxivId) },
@@ -43,7 +39,10 @@ const links = [
 >
   <p class="eyebrow">{t.paper.eyebrow}</p>
   <h2 class="paper-title" lang="en">{paper.paperTitle}</h2>
-  <p class="authors" lang="en">{authorLine}</p>
+  <p class="authors">
+    {/* CRITICAL: lang="en"은 이름에만 건다. "외 1명"까지 감싸면 스크린리더가 영어로 읽는다 */}
+    <span lang="en">{authorLine.names}</span>{authorLine.more && ` ${authorLine.more}`}
+  </p>
   <p class="meta-text venue">{paper.venue} {paper.year}</p>
 
   {

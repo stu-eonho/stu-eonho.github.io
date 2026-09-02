@@ -167,6 +167,13 @@
   --focus-ring-soft: rgb(0 113 227 / 0.35); /* [local extension] 검색 입력 포커스 */
   --marker-ring: rgb(0 113 227 / 0.24); /* [local extension] 재학 중 타임라인 마커 */
   --outline-hover-tint: rgb(0 102 204 / 0.06); /* [local extension] outline 버튼 hover */
+  --table-tint-gray: rgb(0 0 0 / 0.045);
+  --table-tint-red: rgb(255 59 48 / 0.09);
+  --table-tint-orange: rgb(255 149 0 / 0.1);
+  --table-tint-yellow: rgb(255 204 0 / 0.12);
+  --table-tint-green: rgb(52 199 89 / 0.09);
+  --table-tint-blue: rgb(0 122 255 / 0.08);
+  --table-tint-purple: rgb(175 82 222 / 0.08);
 
   --focus-ring: var(--color-apple-primary); /* [local extension] */
   --content-image-filter: none; /* [local extension] 다크에서만 값이 바뀐다 */
@@ -208,6 +215,13 @@
     --disabled-fill: rgb(255 255 255 / 0.06); /* [local extension] */
     --disabled-fg: #a1a1a6; /* [local extension] 다크에서 #86868b은 비활성 배경 위 3.90:1로 미달 */
     --outline-hover-tint: rgb(41 151 255 / 0.1); /* [local extension] */
+    --table-tint-gray: rgb(255 255 255 / 0.08);
+    --table-tint-red: rgb(255 69 58 / 0.14);
+    --table-tint-orange: rgb(255 159 10 / 0.14);
+    --table-tint-yellow: rgb(255 214 10 / 0.14);
+    --table-tint-green: rgb(48 209 88 / 0.14);
+    --table-tint-blue: rgb(10 132 255 / 0.14);
+    --table-tint-purple: rgb(191 90 242 / 0.14);
 
     --content-image-filter: brightness(0.92); /* [local extension] 밝은 스크린샷 눈부심 완화 */
   }
@@ -238,6 +252,13 @@
   --disabled-fill: rgb(255 255 255 / 0.06);
   --disabled-fg: #a1a1a6;
   --outline-hover-tint: rgb(41 151 255 / 0.1);
+  --table-tint-gray: rgb(255 255 255 / 0.08);
+  --table-tint-red: rgb(255 69 58 / 0.14);
+  --table-tint-orange: rgb(255 159 10 / 0.14);
+  --table-tint-yellow: rgb(255 214 10 / 0.14);
+  --table-tint-green: rgb(48 209 88 / 0.14);
+  --table-tint-blue: rgb(10 132 255 / 0.14);
+  --table-tint-purple: rgb(191 90 242 / 0.14);
 
   --content-image-filter: brightness(0.92);
 }

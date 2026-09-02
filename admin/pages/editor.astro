@@ -18,6 +18,7 @@ const TOOLS = [
   { key: 'quote', label: L.editor.toolbar.quote },
   { key: 'math', label: L.editor.toolbar.math },
   { key: 'image', label: L.editor.toolbar.image },
+  { key: 'table', label: L.editor.toolbar.table },
   { key: 'h2', label: L.editor.toolbar.h2 },
   { key: 'h3', label: L.editor.toolbar.h3 },
 ];
@@ -58,7 +59,13 @@ const TOOLS = [
             <input class="admin-input" id="f-title" type="text" data-name="title" />
           </Field>
 
-          <Field label={L.editor.fieldDescription} for="f-desc" path="description" max={200}>
+          <Field
+            label={L.editor.fieldDescription}
+            for="f-desc"
+            path="description"
+            max={200}
+            hint={L.editor.fieldDescriptionHint}
+          >
             <textarea class="admin-textarea" id="f-desc" data-name="description"></textarea>
           </Field>
 
@@ -123,6 +130,7 @@ const TOOLS = [
                 {L.editor.fieldToc}
               </label>
             </div>
+            <p class="admin-hint">{L.editor.fieldMathHint}</p>
           </div>
         </div>
       </details>
@@ -285,6 +293,10 @@ const TOOLS = [
           <div data-toc-chips style="display: flex; flex-wrap: wrap; gap: var(--spacing-ext-1)">
           </div>
           <span class="admin-toolbar-spacer"></span>
+          <label class="admin-check admin-preview-sync">
+            <input class="admin-check-input" type="checkbox" checked data-scroll-sync />
+            {L.editor.syncScroll}
+          </label>
           <span class="admin-preview-note" data-reading-time></span>
         </div>
         <p class="admin-preview-note admin-row-hidden" data-preview-stale>
@@ -297,7 +309,7 @@ const TOOLS = [
           <pre class="admin-jsx-block" data-source-body></pre>
         </div>
 
-        <div class="prose-body" data-preview-html></div>
+        <div class="prose-body admin-preview-scroll" data-preview-html></div>
       </div>
     </div>
   </div>
@@ -362,6 +374,7 @@ const TOOLS = [
     <button type="button" class="admin-drop admin-drop-compact" data-image-drop>
       <span>{L.assets.dropHere}</span>
     </button>
+    <p class="admin-hint">{L.editor.imagePasteHint}</p>
     <div class="admin-field">
       <label class="admin-label" for="image-pick">{L.editor.pickImage}</label>
       <select class="admin-select" id="image-pick" data-image-select></select>
@@ -393,6 +406,97 @@ const TOOLS = [
         <option value="right">{L.editor.alignRight}</option>
       </select>
       <p class="admin-hint">{L.editor.imageAlignHint}</p>
+    </div>
+  </div>
+  <div class="admin-dialog-actions">
+    <Button variant="compact-outline" data-dialog-cancel>{L.posts.cancel}</Button>
+    <Button variant="compact" data-dialog-confirm>{L.editor.insert}</Button>
+  </div>
+</dialog>
+
+<dialog class="admin-dialog admin-table-dialog" data-table-dialog>
+  <h2 class="admin-dialog-title">{L.editor.insertTable}</h2>
+  <div class="admin-dialog-body">
+    <div class="admin-table-config-grid">
+      <div class="admin-field">
+        <label class="admin-label" for="table-rows">{L.editor.tableRows}</label>
+        <input
+          class="admin-input"
+          id="table-rows"
+          type="number"
+          min="1"
+          max="20"
+          value="5"
+          data-table-rows
+        />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="table-columns">{L.editor.tableColumns}</label>
+        <input
+          class="admin-input"
+          id="table-columns"
+          type="number"
+          min="1"
+          max="8"
+          value="4"
+          data-table-columns
+        />
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="table-width">{L.editor.tableWidth}</label>
+        <select class="admin-select" id="table-width" data-table-width>
+          <option value="full">{L.editor.tableWidthFull}</option>
+          <option value="fit">{L.editor.tableWidthFit}</option>
+        </select>
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="table-align">{L.editor.tableAlign}</label>
+        <select class="admin-select" id="table-align" data-table-align>
+          <option value="left">{L.editor.alignLeft}</option>
+          <option value="center">{L.editor.alignCenter}</option>
+          <option value="right">{L.editor.alignRight}</option>
+        </select>
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="table-text-align">{L.editor.tableTextAlign}</label>
+        <select class="admin-select" id="table-text-align" data-table-text-align>
+          <option value="left">{L.editor.alignLeft}</option>
+          <option value="center">{L.editor.alignCenter}</option>
+          <option value="right">{L.editor.alignRight}</option>
+        </select>
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="table-tint">{L.editor.tableTint}</label>
+        <select class="admin-select" id="table-tint" data-table-tint>
+          <option value="none">{L.editor.tableTintNone}</option>
+          <option value="gray">{L.editor.tableTintGray}</option>
+          <option value="red">{L.editor.tableTintRed}</option>
+          <option value="orange">{L.editor.tableTintOrange}</option>
+          <option value="yellow">{L.editor.tableTintYellow}</option>
+          <option value="green">{L.editor.tableTintGreen}</option>
+          <option value="blue">{L.editor.tableTintBlue}</option>
+          <option value="purple">{L.editor.tableTintPurple}</option>
+        </select>
+      </div>
+      <div class="admin-field">
+        <label class="admin-label" for="table-tint-scope">{L.editor.tableTintScope}</label>
+        <select class="admin-select" id="table-tint-scope" data-table-tint-scope disabled>
+          <option value="header">{L.editor.tableTintHeader}</option>
+          <option value="body">{L.editor.tableTintBody}</option>
+          <option value="all">{L.editor.tableTintAll}</option>
+        </select>
+      </div>
+    </div>
+    <label class="admin-check">
+      <input class="admin-check-input" type="checkbox" checked data-table-header />
+      {L.editor.tableHeader}
+    </label>
+    <div class="admin-field">
+      <span class="admin-label">{L.editor.tableCells}</span>
+      <div class="admin-table-cell-scroll">
+        <div class="admin-table-cell-grid" data-table-cell-grid></div>
+      </div>
+      <p class="admin-hint">{L.editor.tableHint}</p>
     </div>
   </div>
   <div class="admin-dialog-actions">

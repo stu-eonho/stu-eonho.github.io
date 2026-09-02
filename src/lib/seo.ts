@@ -124,7 +124,8 @@ export function personJsonLd(lang: Lang, profile: Profile = PROFILE): string {
 
 export interface ArticleJsonLdInput {
   headline: string;
-  description: string;
+  /** 선택. 글에 설명이 없으면 JSON-LD에서도 키째로 빠진다 */
+  description?: string;
   datePublished: Date;
   dateModified?: Date;
   keywords: string[];

@@ -51,9 +51,12 @@ const DEFAULTS = {
 /**
  * 스키마가 기본값 없이 요구하는 키. 값이 비어도 키를 남긴다.
  * `slug`·`category`는 경로에서 오고 `date`는 날짜 정규화를 거치므로 실질 대상은
- * `title`·`description`이지만, 계약을 명시적으로 적어 둔다.
+ * `title`이지만, 계약을 명시적으로 적어 둔다.
+ *
+ * CRITICAL: `description`은 여기 없다 — 선택 필드이므로 비면 키째로 사라져야 한다.
+ * `description: ''`를 남기면 스키마가 통과시키더라도 "설명 없음"의 표현이 둘로 갈린다.
  */
-const REQUIRED_KEYS = new Set(['slug', 'title', 'description', 'category', 'date']);
+const REQUIRED_KEYS = new Set(['slug', 'title', 'category', 'date']);
 
 /** 플로우(한 줄) 배열로 낼 키. */
 const FLOW_ARRAYS = new Set(['tags', 'stack']);

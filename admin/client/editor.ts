@@ -20,8 +20,9 @@ import {
   writeChips,
 } from './fields';
 import { bindCounters, clearFieldErrors, createForm, notifyChanged } from './forms';
-import { initDropZone } from './uploader';
+import { initDropZone, uploadFile, type UploadResult } from './uploader';
 import { L } from '../labels';
+import { enhanceTables } from '../../src/scripts/table-presentation';
 
 interface PostPayload {
   frontmatter: Record<string, any>;
@@ -83,6 +84,7 @@ export async function initEditor(): Promise<void> {
   const bodyInput = need<HTMLTextAreaElement>('[data-body]');
   const previewBox = need('[data-preview]');
   const previewHtml = need('[data-preview-html]');
+  const scrollSyncInput = need<HTMLInputElement>('[data-scroll-sync]');
   const tocChips = need('[data-toc-chips]');
   const readingTime = need('[data-reading-time]');
   const staleNote = need('[data-preview-stale]');
@@ -220,6 +222,25 @@ export async function initEditor(): Promise<void> {
     schedulePreview();
   }
 
+  /** 블록 문법이 앞뒤 문단과 붙어 깨지지 않도록 빈 줄을 보장해 넣는다. */
+  function insertBlockAtCursor(block: string): void {
+    const start = bodyInput.selectionStart;
+    const end = bodyInput.selectionEnd;
+    const value = bodyInput.value;
+    const before = value.slice(0, start);
+    const after = value.slice(end);
+    const leading =
+      before === '' || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+    const trailing =
+      after === '' || after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
+    const inserted = `${leading}${block}${trailing}`;
+    bodyInput.value = `${before}${inserted}${after}`;
+    bodyInput.focus();
+    bodyInput.setSelectionRange(start + inserted.length, start + inserted.length);
+    notifyChanged();
+    schedulePreview();
+  }
+
   const TOOL_ACTIONS: Record<string, () => void> = {
     bold: () => surround('**'),
     italic: () => surround('_'),
@@ -231,12 +252,170 @@ export async function initEditor(): Promise<void> {
     // CRITICAL: 자리표시 경로를 넣지 않는다. 없는 파일을 참조하면 Vite가 모듈을 해석하지
     // 못해 dev 서버와 빌드가 함께 죽는다. 실제로 올라간 파일 중에서만 고르게 한다.
     image: () => void openImagePicker(),
+    table: () => void openTableBuilder(),
     h2: () => insertLine('## '),
     h3: () => insertLine('### '),
   };
 
   for (const button of qsa<HTMLButtonElement>('[data-tool]')) {
     button.addEventListener('click', () => TOOL_ACTIONS[button.dataset.tool ?? '']?.());
+  }
+
+  /* ---------- 표 삽입 ---------- */
+
+  const TABLE_MAX_ROWS = 20;
+  const TABLE_MAX_COLUMNS = 8;
+
+  function clampInteger(value: string, min: number, max: number, fallback: number): number {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+  }
+
+  /** 마크다운 표에서 구조 문자로 쓰이는 값을 셀 내용에서는 문자 그대로 보존한다. */
+  function escapeTableCell(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/{/g, '&#123;')
+      .replace(/}/g, '&#125;')
+      .replace(/\|/g, '\\|')
+      .trim();
+  }
+
+  async function openTableBuilder(): Promise<void> {
+    const dialog = qs<HTMLDialogElement>('[data-table-dialog]');
+    if (!dialog) return;
+
+    const rowInput = need<HTMLInputElement>('[data-table-rows]', dialog);
+    const columnInput = need<HTMLInputElement>('[data-table-columns]', dialog);
+    const headerInput = need<HTMLInputElement>('[data-table-header]', dialog);
+    const widthInput = need<HTMLSelectElement>('[data-table-width]', dialog);
+    const alignInput = need<HTMLSelectElement>('[data-table-align]', dialog);
+    const textAlignInput = need<HTMLSelectElement>('[data-table-text-align]', dialog);
+    const tintInput = need<HTMLSelectElement>('[data-table-tint]', dialog);
+    const tintScopeInput = need<HTMLSelectElement>('[data-table-tint-scope]', dialog);
+    const grid = need<HTMLElement>('[data-table-cell-grid]', dialog);
+
+    rowInput.value = '5';
+    columnInput.value = '4';
+    headerInput.checked = true;
+    widthInput.value = 'full';
+    alignInput.value = 'left';
+    alignInput.disabled = true;
+    textAlignInput.value = 'left';
+    tintInput.value = 'none';
+    tintScopeInput.value = 'header';
+    tintScopeInput.disabled = true;
+
+    const selected = bodyInput.value.slice(bodyInput.selectionStart, bodyInput.selectionEnd).trim();
+    const selectedCells = selected ? selected.split(/\r?\n/).map((row) => row.split('\t')) : [];
+    if (selectedCells.length > 0) {
+      rowInput.value = String(Math.min(TABLE_MAX_ROWS, Math.max(1, selectedCells.length - 1)));
+      columnInput.value = String(
+        Math.min(TABLE_MAX_COLUMNS, Math.max(1, ...selectedCells.map((row) => row.length))),
+      );
+    }
+
+    const renderGrid = (): void => {
+      const oldValues = new Map(
+        qsa<HTMLInputElement>('[data-table-cell]', grid).map((input) => [
+          `${input.dataset.tableRow}:${input.dataset.tableColumn}`,
+          input.value,
+        ]),
+      );
+      const rows = clampInteger(rowInput.value, 1, TABLE_MAX_ROWS, 5);
+      const columns = clampInteger(columnInput.value, 1, TABLE_MAX_COLUMNS, 4);
+      rowInput.value = String(rows);
+      columnInput.value = String(columns);
+      clear(grid);
+      grid.style.setProperty('--table-columns', String(columns));
+
+      const totalRows = rows + (headerInput.checked ? 1 : 0);
+      for (let row = 0; row < totalRows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          const selectedValue = selectedCells[row]?.[column];
+          const previousValue = oldValues.get(`${row}:${column}`);
+          const input = el('input', {
+            class: 'admin-input admin-table-cell-input',
+            type: 'text',
+            'data-table-cell': '',
+            'data-table-header-cell': headerInput.checked && row === 0 ? 'true' : 'false',
+            'data-table-row': row,
+            'data-table-column': column,
+            'aria-label': L.editor.tableCellPlaceholder(row + 1, column + 1),
+            placeholder:
+              headerInput.checked && row === 0
+                ? `${L.editor.tableColumns} ${column + 1}`
+                : L.editor.tableCellPlaceholder(row + 1, column + 1),
+          }) as HTMLInputElement;
+          input.value =
+            previousValue ??
+            selectedValue ??
+            (headerInput.checked && row === 0 ? `${L.editor.tableColumns} ${column + 1}` : '');
+          grid.append(input);
+        }
+      }
+    };
+
+    const onDimensionsChanged = () => renderGrid();
+    const onWidthChanged = () => {
+      alignInput.disabled = widthInput.value === 'full';
+    };
+    const onTintChanged = () => {
+      tintScopeInput.disabled = tintInput.value === 'none';
+    };
+    rowInput.addEventListener('change', onDimensionsChanged);
+    columnInput.addEventListener('change', onDimensionsChanged);
+    headerInput.addEventListener('change', onDimensionsChanged);
+    widthInput.addEventListener('change', onWidthChanged);
+    tintInput.addEventListener('change', onTintChanged);
+    renderGrid();
+
+    const confirmed = await openDialog(dialog);
+    rowInput.removeEventListener('change', onDimensionsChanged);
+    columnInput.removeEventListener('change', onDimensionsChanged);
+    headerInput.removeEventListener('change', onDimensionsChanged);
+    widthInput.removeEventListener('change', onWidthChanged);
+    tintInput.removeEventListener('change', onTintChanged);
+    if (!confirmed) return;
+
+    const rows = clampInteger(rowInput.value, 1, TABLE_MAX_ROWS, 5);
+    const columns = clampInteger(columnInput.value, 1, TABLE_MAX_COLUMNS, 4);
+    const values = qsa<HTMLInputElement>('[data-table-cell]', grid).map((input) =>
+      escapeTableCell(input.value),
+    );
+    const headerOffset = headerInput.checked ? 1 : 0;
+    const tableRows = Array.from({ length: rows + headerOffset }, (_, row) =>
+      Array.from({ length: columns }, (_, column) => values[row * columns + column] ?? ''),
+    );
+    const header = headerInput.checked
+      ? tableRows.shift()!
+      : Array.from({ length: columns }, (_, column) => `${L.editor.tableColumns} ${column + 1}`);
+    const delimiter =
+      textAlignInput.value === 'center'
+        ? ':---:'
+        : textAlignInput.value === 'right'
+          ? '---:'
+          : ':---';
+    const line = (cells: string[]) => `| ${cells.join(' | ')} |`;
+    const config = [
+      `align=${alignInput.value}`,
+      `width=${widthInput.value}`,
+      `tint=${tintInput.value}`,
+      `tint-scope=${tintScopeInput.value}`,
+      `header=${String(headerInput.checked)}`,
+    ].join(' ');
+    insertBlockAtCursor(
+      [
+        '```table-config',
+        config,
+        '```',
+        line(header),
+        line(Array(columns).fill(delimiter)),
+        ...tableRows.map(line),
+      ].join('\n'),
+    );
   }
 
   bodyInput.addEventListener('keydown', (event) => {
@@ -271,6 +450,129 @@ export async function initEditor(): Promise<void> {
   /** 늦게 도착한 응답이 새 응답을 덮어쓰지 않게 하는 순번. */
   let previewSeq = 0;
 
+  type ScrollPoint = { editor: number; preview: number };
+  let scrollPoints: ScrollPoint[] = [];
+  let ignoreEditorScroll = false;
+  let ignorePreviewScroll = false;
+  let scrollMapFrame = 0;
+
+  function syncPreviewHeight(): void {
+    // 모바일 탭에서 숨겨진 textarea의 clientHeight는 0이다. 표시 중일 때만 갱신한다.
+    if (bodyInput.clientHeight > 0) previewHtml.style.height = `${bodyInput.clientHeight}px`;
+  }
+
+  /** textarea와 같은 줄바꿈 규칙으로 제목의 실제 세로 위치를 잰다. */
+  function measureEditorOffsets(offsets: number[]): number[] {
+    const computed = window.getComputedStyle(bodyInput);
+    const mirror = document.createElement('div');
+    mirror.setAttribute('aria-hidden', 'true');
+    Object.assign(mirror.style, {
+      position: 'fixed',
+      visibility: 'hidden',
+      pointerEvents: 'none',
+      inset: '0 auto auto -100000px',
+      width: `${bodyInput.offsetWidth}px`,
+      boxSizing: computed.boxSizing,
+      padding: computed.padding,
+      border: computed.border,
+      font: computed.font,
+      letterSpacing: computed.letterSpacing,
+      lineHeight: computed.lineHeight,
+      tabSize: computed.tabSize,
+      whiteSpace: 'pre-wrap',
+      overflowWrap: 'break-word',
+      wordBreak: computed.wordBreak,
+    });
+
+    const markers: HTMLElement[] = [];
+    let cursor = 0;
+    for (const offset of offsets) {
+      mirror.append(document.createTextNode(bodyInput.value.slice(cursor, offset)));
+      const marker = document.createElement('span');
+      marker.style.display = 'inline-block';
+      marker.style.width = '0';
+      marker.style.height = computed.lineHeight;
+      mirror.append(marker);
+      markers.push(marker);
+      cursor = offset;
+    }
+    mirror.append(document.createTextNode(bodyInput.value.slice(cursor)));
+    document.body.append(mirror);
+    const top = mirror.getBoundingClientRect().top;
+    const measured = markers.map((marker) => marker.getBoundingClientRect().top - top);
+    mirror.remove();
+    return measured;
+  }
+
+  /** 마크다운 제목을 기준점으로 삼아 긴 문단·이미지가 있어도 구간별로 위치를 맞춘다. */
+  function rebuildScrollMap(): void {
+    window.cancelAnimationFrame(scrollMapFrame);
+    scrollMapFrame = window.requestAnimationFrame(() => {
+      syncPreviewHeight();
+
+      const sourceHeadings = Array.from(bodyInput.value.matchAll(/^#{1,6}[ \t]+.+$/gm));
+      const renderedHeadings = qsa<HTMLElement>('h1, h2, h3, h4, h5, h6', previewHtml);
+      const count = Math.min(sourceHeadings.length, renderedHeadings.length);
+      const editorMax = Math.max(0, bodyInput.scrollHeight - bodyInput.clientHeight);
+      const previewMax = Math.max(0, previewHtml.scrollHeight - previewHtml.clientHeight);
+      const sourceOffsets = sourceHeadings.slice(0, count).map((heading) => heading.index ?? 0);
+      const editorOffsets = measureEditorOffsets(sourceOffsets);
+      const previewRect = previewHtml.getBoundingClientRect();
+
+      const next: ScrollPoint[] = [{ editor: 0, preview: 0 }];
+      for (let index = 0; index < count; index += 1) {
+        const heading = renderedHeadings[index];
+        const previewOffset =
+          heading.getBoundingClientRect().top - previewRect.top + previewHtml.scrollTop;
+        const point = {
+          editor: Math.min(editorMax, Math.max(0, editorOffsets[index])),
+          preview: Math.min(previewMax, Math.max(0, previewOffset)),
+        };
+        const previous = next[next.length - 1];
+        if (point.editor > previous.editor && point.preview >= previous.preview) next.push(point);
+      }
+      if (editorMax > next[next.length - 1].editor || previewMax > next[next.length - 1].preview) {
+        next.push({ editor: editorMax, preview: previewMax });
+      }
+      scrollPoints = next;
+      syncEditorToPreview();
+    });
+  }
+
+  function mapScroll(value: number, from: keyof ScrollPoint, to: keyof ScrollPoint): number {
+    if (scrollPoints.length < 2) return value;
+    for (let index = 1; index < scrollPoints.length; index += 1) {
+      const before = scrollPoints[index - 1];
+      const after = scrollPoints[index];
+      if (value > after[from]) continue;
+      const distance = after[from] - before[from];
+      const progress = distance <= 0 ? 0 : (value - before[from]) / distance;
+      return before[to] + (after[to] - before[to]) * Math.min(1, Math.max(0, progress));
+    }
+    return scrollPoints[scrollPoints.length - 1][to];
+  }
+
+  function syncEditorToPreview(): void {
+    if (!scrollSyncInput.checked || ignoreEditorScroll || previewHtml.clientHeight === 0) return;
+    ignorePreviewScroll = true;
+    previewHtml.scrollTop = mapScroll(bodyInput.scrollTop, 'editor', 'preview');
+    window.requestAnimationFrame(() => (ignorePreviewScroll = false));
+  }
+
+  function syncPreviewToEditor(): void {
+    if (!scrollSyncInput.checked || ignorePreviewScroll || bodyInput.clientHeight === 0) return;
+    ignoreEditorScroll = true;
+    bodyInput.scrollTop = mapScroll(previewHtml.scrollTop, 'preview', 'editor');
+    window.requestAnimationFrame(() => (ignoreEditorScroll = false));
+  }
+
+  bodyInput.addEventListener('scroll', syncEditorToPreview, { passive: true });
+  previewHtml.addEventListener('scroll', syncPreviewToEditor, { passive: true });
+  scrollSyncInput.addEventListener('change', () => {
+    if (scrollSyncInput.checked) syncEditorToPreview();
+  });
+  new ResizeObserver(() => rebuildScrollMap()).observe(bodyInput);
+
   function schedulePreview(): void {
     window.clearTimeout(previewTimer);
     previewTimer = window.setTimeout(() => void renderPreview(), PREVIEW_DEBOUNCE_MS);
@@ -289,7 +591,11 @@ export async function initEditor(): Promise<void> {
       if (seq !== previewSeq) return;
       // CRITICAL: 비우지 않고 통째로 교체한다.
       // 값의 출처는 서버의 `preview.mjs`이며, 사용자 입력은 그 안에서 이스케이프된다.
+      ignorePreviewScroll = true;
       previewHtml.innerHTML = result.html;
+      // dev 서버가 변경 전 마크다운 프로세서를 캐시한 경우에도 설정 코드가 노출되지 않게 한다.
+      enhanceTables(previewHtml);
+      rebuildScrollMap();
       staleNote.classList.add('admin-row-hidden');
 
       clear(tocChips);
@@ -334,6 +640,10 @@ export async function initEditor(): Promise<void> {
       for (const other of qsa('[data-tab]')) {
         other.setAttribute('aria-pressed', String(other === tab));
       }
+      window.requestAnimationFrame(() => {
+        rebuildScrollMap();
+        syncEditorToPreview();
+      });
     });
   }
 
@@ -443,6 +753,85 @@ export async function initEditor(): Promise<void> {
     const label = options.length > 0 ? [alt, ...options].join('|') : alt;
     insertAtCursor(`![${label}](../../../assets/${name})`);
   }
+
+  /* ---------- 클립보드 이미지 붙여넣기 ---------- */
+
+  const CLIPBOARD_IMAGE_EXTENSIONS: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/avif': 'avif',
+    'image/gif': 'gif',
+  };
+
+  /** 스크린샷처럼 이름이 없는 클립보드 이미지에 서버가 검증할 수 있는 확장자를 붙인다. */
+  function nameClipboardImage(file: File, index: number): File {
+    const extension = CLIPBOARD_IMAGE_EXTENSIONS[file.type];
+    const hasAllowedExtension = /\.(?:jpe?g|png|webp|avif|gif)$/i.test(file.name);
+    const genericName = /^(?:image|clipboard)(?:\.\w+)?$/i.test(file.name);
+    if (hasAllowedExtension && !genericName) return file;
+
+    const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
+    const suffix = index === 0 ? '' : `-${index + 1}`;
+    return new File([file], `clipboard-${timestamp}${suffix}.${extension}`, {
+      type: file.type,
+      lastModified: Date.now(),
+    });
+  }
+
+  function clipboardImages(event: ClipboardEvent): File[] {
+    const items = Array.from(event.clipboardData?.items ?? []);
+    return items
+      .filter((item) => item.kind === 'file' && item.type in CLIPBOARD_IMAGE_EXTENSIONS)
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => file !== null)
+      .map(nameClipboardImage);
+  }
+
+  async function uploadClipboardImages(files: File[]): Promise<UploadResult[]> {
+    const uploaded: UploadResult[] = [];
+    for (const file of files) {
+      try {
+        uploaded.push(await uploadFile(file));
+      } catch (error) {
+        reportError(error);
+      }
+    }
+    if (uploaded.length > 0) {
+      await loadAssets();
+      toast('success', L.editor.imagePasted(uploaded.length));
+    }
+    return uploaded;
+  }
+
+  document.addEventListener('paste', (event) => {
+    const imageDialog = qs<HTMLDialogElement>('[data-image-dialog]');
+    const inImageDialog = imageDialog?.open === true && imageDialog.contains(event.target as Node);
+    const inBody = event.target === bodyInput;
+    if (!inBody && !inImageDialog) return;
+
+    const files = clipboardImages(event);
+    if (files.length === 0) return; // 텍스트 붙여넣기는 브라우저 기본 동작을 유지한다.
+    event.preventDefault();
+
+    const start = bodyInput.selectionStart;
+    const end = bodyInput.selectionEnd;
+    const bodySnapshot = bodyInput.value;
+    void uploadClipboardImages(files).then((uploaded) => {
+      if (uploaded.length === 0) return;
+
+      if (inImageDialog) {
+        const picker = qs<HTMLSelectElement>('[data-image-select]', imageDialog);
+        if (picker) picker.value = uploaded[uploaded.length - 1].name;
+        return;
+      }
+
+      // 업로드 중 사용자가 계속 편집했다면 현재 커서에 넣어 새 내용을 덮어쓰지 않는다.
+      if (bodyInput.value === bodySnapshot) bodyInput.setSelectionRange(start, end);
+      const markdown = uploaded.map((result) => `![](../../../assets/${result.name})`).join('\n\n');
+      insertBlockAtCursor(markdown);
+    });
+  });
 
   qs('[data-cover-clear]')?.addEventListener('click', () => {
     coverSelect.value = '';
