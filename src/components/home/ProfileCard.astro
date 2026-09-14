@@ -7,13 +7,14 @@ import EducationList from './EducationList.astro';
 import CareerList from './CareerList.astro';
 import SkillGroups from './SkillGroups.astro';
 import InterestList from './InterestList.astro';
+import CourseList from './CourseList.astro';
 import { PROFILE, PROFILE_PHOTO, isPlaceholder, type SocialType } from '@/config/profile';
 import { i18n, text } from '@/config/i18n';
 
 /**
  * 홈의 프로필 카드 — CV 한 장처럼 읽히는 단일 덩어리.
  *
- * 신원(사진·이름·소개·연락처·링크) → 소개문 → 학적 → 경력 → 스킬 → 관심 분야가
+ * 신원(사진·이름·소개·연락처·링크) → 소개문 → 학적 → 경력 → 스킬 → 관심 분야 → 수강 과목이
  * 하나의 Card 안에서 hairline으로만 나뉜다. 섹션을 페이지 전체에 흩뿌리지 않는다.
  *
  * CRITICAL: 프로필 사진은 LCP 요소다 — eager + fetchpriority=high로 두고 리빌을 걸지 않는다.
@@ -65,12 +66,13 @@ const facts = [text(PROFILE.location, lang), PROFILE.email].filter(Boolean) as s
  */
 const showNameEn = lang === 'ko' && Boolean(PROFILE.nameEn);
 
-// 네 섹션이 모두 비면 구분선만 남은 빈 영역이 된다 — 그럴 땐 본문 블록 자체를 내지 않는다.
+// 섹션이 모두 비면 구분선만 남은 빈 영역이 된다 — 그럴 땐 본문 블록 자체를 내지 않는다.
 const hasCvBody =
   PROFILE.education.length > 0 ||
   PROFILE.career.length > 0 ||
   PROFILE.skillGroups.length > 0 ||
-  PROFILE.interests.length > 0;
+  PROFILE.interests.length > 0 ||
+  PROFILE.courses.length > 0;
 ---
 
 <Card class="profile-card" data-reveal-onload>
@@ -163,6 +165,7 @@ const hasCvBody =
         <CareerList />
         <SkillGroups />
         <InterestList />
+        <CourseList />
       </div>
     )
   }

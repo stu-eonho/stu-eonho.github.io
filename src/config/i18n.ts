@@ -190,6 +190,26 @@ const ko = {
     career: '경력',
     skills: '스킬',
     interests: '관심 분야',
+    courses: '수강 과목',
+    /** 제공처를 적지 않은 독학 과목 뒤 괄호에 붙는다 */
+    selfStudy: '독학',
+    /** 학기를 비운 과목이 모이는 줄 */
+    otherTerm: '기타',
+    /** 과목 수강 시기. `term`의 "YYYY-1" 등에서 뒷부분을 이 표기로 바꾼다 */
+    semester: {
+      first: '1학기',
+      second: '2학기',
+      summer: '여름학기',
+      winter: '겨울학기',
+    },
+    term: (year: string, semester: string) => `${year}년 ${semester}`,
+    /** 학년-학기 표기. 예: "1-1", "2-여름" */
+    gradeTerm: (grade: string, semester: 'first' | 'second' | 'summer' | 'winter') =>
+      `${grade}-${{ first: '1', second: '2', summer: '여름', winter: '겨울' }[semester]}`,
+    /** 학기 없이 학년만 적은 경우 */
+    yearLevel: (grade: string) => `${grade}학년`,
+    grade: (grade: string) => `성적 ${grade}`,
+    relatedPost: '관련 글',
     cv: 'CV',
     /** 재학·재직 중 */
     present: '현재',
@@ -381,6 +401,22 @@ const en: UIStrings = {
     career: 'Experience',
     skills: 'Skills',
     interests: 'Research interests',
+    courses: 'Coursework',
+    selfStudy: 'Self-study',
+    otherTerm: 'Other',
+    semester: {
+      first: 'Spring',
+      second: 'Fall',
+      summer: 'Summer',
+      winter: 'Winter',
+    },
+    term: (year: string, semester: string) => `${semester} ${year}`,
+    // "1-1"은 한국식 표기라 해외 독자가 읽지 못한다 — 영어 화면은 풀어 쓴다
+    gradeTerm: (grade: string, semester: 'first' | 'second' | 'summer' | 'winter') =>
+      `Year ${grade}, ${{ first: 'Spring', second: 'Fall', summer: 'Summer', winter: 'Winter' }[semester]}`,
+    yearLevel: (grade: string) => `Year ${grade}`,
+    grade: (grade: string) => `Grade ${grade}`,
+    relatedPost: 'Related post',
     cv: 'CV',
     present: 'Present',
     enrolled: 'enrolled',

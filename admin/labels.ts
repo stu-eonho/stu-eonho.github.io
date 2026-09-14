@@ -239,6 +239,18 @@ export const L = {
     skillGroupNameHint:
       '예: Languages / ML·DL / Infra. 그룹을 하나만 쓴다면 비워 두세요 — 비우면 소제목 없이 칩만 나옵니다.',
     interests: '관심 분야',
+    courses: '수강 과목',
+    coursesIntro:
+      '홈의 관심 분야 아래에 작은 글씨로 나옵니다. 같은 학기 과목은 한 줄로 묶이고 최근 학기가 위에 옵니다. 과목명이 빈 행은 저장할 때 버려집니다.',
+    courseTermHint:
+      '학년-학기 1-1 · 1-2 · 1-summer · 1-winter, 또는 연도-학기 2026-1. 같은 값끼리 한 줄로 묶이며, 비우면 맨 아래 "기타" 줄로 갑니다.',
+    courseProviderHint: '독학 강의일 때 예: Stanford CS231n, Coursera. 학교 수업이면 비워 두세요.',
+    courseGradeHint: '비우면 성적을 표시하지 않습니다',
+    coursePostHint:
+      '고르면 과목 옆에 "관련 글" 링크가 붙습니다. 초안 글은 배포된 사이트에서 링크가 빠집니다.',
+    coursePostNone: '(없음)',
+    coursePostMissing: '찾을 수 없는 글',
+    courseDraft: '초안',
     links: '링크',
     localized: '언어별',
     placeholder: '미기입',

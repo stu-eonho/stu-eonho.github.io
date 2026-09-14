@@ -241,7 +241,7 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
 | `/admin`            | `GET /posts`, `GET /profile`, `GET /git/status`                          |
 | `/admin/posts`      | `GET /posts`, `POST /posts/:id/translation`, `DELETE /posts/:id`         |
 | `/admin/posts/edit` | `GET/POST/PUT /posts`, `POST /preview`, `GET/POST /assets`, `GET /session` |
-| `/admin/profile`    | `GET/PUT /profile`, `POST /assets`(`purpose: profile-photo`)             |
+| `/admin/profile`    | `GET/PUT /profile`, `GET /posts`(수강 과목의 관련 글 드롭다운), `POST /assets`(`purpose: profile-photo`)             |
 | `/admin/settings`   | `GET/PUT /config/site`, `GET/PUT /config/categories`, `GET /config/icons` |
 | `/admin/strings`    | `GET/PUT /strings`                                                       |
 | `/admin/tags`       | `GET /tags`, `POST /tags/{rename,merge,delete}`                          |

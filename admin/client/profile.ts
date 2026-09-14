@@ -51,10 +51,56 @@ interface SkillGroup {
   items: string[];
 }
 
+interface CourseEntry {
+  name: MaybeLocalized;
+  kind: string;
+  term?: string;
+  provider?: MaybeLocalized;
+  grade?: string;
+  /** "카테고리/slug" */
+  post?: string;
+}
+
 interface SocialLink {
   type: string;
   url: string;
   label: MaybeLocalized;
+}
+
+interface PostSummary {
+  category: string;
+  slug: string;
+  lang: string;
+  title: string;
+  draft: boolean;
+}
+
+interface PostOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * 관련 글 드롭다운 목록. 번역본끼리는 `category/slug`가 같으므로 한 항목으로 접는다.
+ * 사이트의 `postsForLang`과 같은 키다 — 갈리면 고른 글을 사이트가 찾지 못한다.
+ */
+async function loadPostOptions(): Promise<PostOption[]> {
+  try {
+    const data = await get<{ posts: PostSummary[] }>('/posts');
+    const byKey = new Map<string, PostSummary>();
+    for (const post of data.posts) {
+      const key = `${post.category}/${post.slug}`;
+      // 원문(ko) 제목을 우선한다
+      if (!byKey.has(key) || post.lang === 'ko') byKey.set(key, post);
+    }
+    return [...byKey].map(([key, post]) => ({
+      value: key,
+      label: `${post.title} — ${key}${post.draft ? ` (${L.profile.courseDraft})` : ''}`,
+    }));
+  } catch {
+    // 글 목록을 못 읽어도 프로필 편집은 막지 않는다. 드롭다운만 "(없음)"으로 남는다.
+    return [];
+  }
 }
 
 interface Profile {
@@ -69,6 +115,7 @@ interface Profile {
   career: CareerEntry[];
   skillGroups: SkillGroup[];
   interests: MaybeLocalized[];
+  courses: CourseEntry[];
   links: SocialLink[];
   cvUrl?: MaybeLocalized;
 }
@@ -166,6 +213,53 @@ export async function initProfile(): Promise<void> {
     },
   });
 
+  let postOptions: PostOption[] = [];
+
+  /**
+   * 행의 관련 글 드롭다운을 채운다.
+   * CRITICAL: 저장된 값이 목록에 없으면(글 삭제·slug 변경) 그 값을 옵션으로 남긴다.
+   * 없애면 폼을 여는 것만으로 값이 "(없음)"으로 바뀌어, 다음 저장 때 조용히 지워진다.
+   */
+  function fillPostSelect(row: HTMLElement, current: string | undefined): void {
+    const select = qs<HTMLSelectElement>('[data-name="post"]', row);
+    if (!select) return;
+    const options = [new Option(L.profile.coursePostNone, '')];
+    for (const option of postOptions) options.push(new Option(option.label, option.value));
+    if (current && !postOptions.some((option) => option.value === current)) {
+      options.push(new Option(`${L.profile.coursePostMissing} — ${current}`, current));
+    }
+    select.replaceChildren(...options);
+    select.value = current ?? '';
+  }
+
+  const courses = initRepeatable<CourseEntry>(need('[data-repeatable="courses"]'), {
+    create: () => ({ name: '', kind: 'school' }),
+    onMount(row) {
+      fillPostSelect(row, undefined);
+    },
+    fill(row, value) {
+      writeLocalized(localizedIn(row, 'name'), value.name);
+      setValue(row, 'kind', value.kind ?? 'school');
+      setValue(row, 'term', value.term ?? '');
+      writeLocalized(localizedIn(row, 'provider'), value.provider);
+      setValue(row, 'grade', value.grade ?? '');
+      fillPostSelect(row, value.post);
+    },
+    read(row) {
+      const name = readLocalized(localizedIn(row, 'name'));
+      // 과목명 없는 행은 버린다 — 홈에 이름 없는 빈 줄이 생긴다.
+      if (name === undefined) return undefined;
+      return {
+        name,
+        kind: getValue(row, 'kind') || 'school',
+        term: optional(getValue(row, 'term')),
+        provider: readLocalized(localizedIn(row, 'provider')),
+        grade: optional(getValue(row, 'grade')),
+        post: optional(getValue(row, 'post')),
+      };
+    },
+  });
+
   const links = initRepeatable<SocialLink>(need('[data-repeatable="links"]'), {
     create: () => ({ type: 'github', url: '', label: '' }),
     fill(row, value) {
@@ -198,6 +292,7 @@ export async function initProfile(): Promise<void> {
         career: career.read(),
         skillGroups: skills.read(),
         interests: readChips(interestsChips),
+        courses: courses.read(),
         links: links.read(),
         cvUrl: optional(getValue(document, 'cvUrl')),
       };
@@ -214,6 +309,7 @@ export async function initProfile(): Promise<void> {
       education.write(value.education ?? []);
       career.write(value.career ?? []);
       skills.write(value.skillGroups ?? []);
+      courses.write(value.courses ?? []);
       links.write(value.links ?? []);
       writeChips(interestsChips, (value.interests ?? []).map(flatten));
       bindCounters();
@@ -277,13 +373,19 @@ export async function initProfile(): Promise<void> {
   /* ---------- 로드 ---------- */
 
   try {
-    const data = await get<{
-      profile: Profile;
-      placeholders: string[];
-      photo: string | null;
-      photoDuplicates: string[];
-      mtime: number | null;
-    }>('/profile');
+    // CRITICAL: 글 목록이 먼저 있어야 한다. form.reset이 행을 채울 때 드롭다운에 옵션이 없으면
+    // 저장된 관련 글이 전부 "찾을 수 없는 글"로 표시된다.
+    const [data, options] = await Promise.all([
+      get<{
+        profile: Profile;
+        placeholders: string[];
+        photo: string | null;
+        photoDuplicates: string[];
+        mtime: number | null;
+      }>('/profile'),
+      loadPostOptions(),
+    ]);
+    postOptions = options;
 
     form.reset(data.profile, data.mtime);
     showPhoto(data.photo);

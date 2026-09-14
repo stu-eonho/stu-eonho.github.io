@@ -184,6 +184,58 @@ const LINK_TYPES = ['github', 'scholar', 'linkedin', 'x', 'email', 'orcid', 'hom
       </div>
     </Card>
 
+    {/* ---------- 수강 과목 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.courses}</h2>
+      <p class="admin-hint" style="margin-bottom: var(--spacing-ext-4)">
+        {L.profile.coursesIntro}
+      </p>
+      <RepeatableList path="courses" addLabel="과목 추가" emptyNote={L.profile.emptySection}>
+        <LocalizedField label="과목명" path="name" />
+        <div class="admin-field">
+          <label class="admin-label" for="course-kind">구분</label>
+          <select class="admin-select" id="course-kind" data-name="kind">
+            <option value="school">학교 수업</option>
+            <option value="self">독학</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="course-term">학기 (선택)</label>
+          <input
+            class="admin-input"
+            id="course-term"
+            type="text"
+            placeholder="1-1"
+            data-name="term"
+          />
+          <p class="admin-hint">{L.profile.courseTermHint}</p>
+        </div>
+        <LocalizedField
+          label="제공처 (선택)"
+          path="provider"
+          hint={L.profile.courseProviderHint}
+        />
+        <div class="admin-field">
+          <label class="admin-label" for="course-grade">성적 (선택)</label>
+          <input
+            class="admin-input"
+            id="course-grade"
+            type="text"
+            placeholder="A+"
+            data-name="grade"
+          />
+          <p class="admin-hint">{L.profile.courseGradeHint}</p>
+        </div>
+        <div class="admin-field">
+          <label class="admin-label" for="course-post">관련 글 (선택)</label>
+          <select class="admin-select" id="course-post" data-name="post">
+            <option value="">{L.profile.coursePostNone}</option>
+          </select>
+          <p class="admin-hint">{L.profile.coursePostHint}</p>
+        </div>
+      </RepeatableList>
+    </Card>
+
     {/* ---------- 링크 ---------- */}
     <Card>
       <h2 class="admin-section-title">{L.profile.links}</h2>

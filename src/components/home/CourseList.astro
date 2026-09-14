@@ -1,0 +1,245 @@
+---
+import { PROFILE, isPlaceholder } from '@/config/profile';
+import { DEFAULT_LANG, i18n, otherLang, text, type MaybeLocalized } from '@/config/i18n';
+import { getPublishedPosts, postHref, postsForLang } from '@/lib/posts';
+
+/**
+ * 수강 과목.
+ *
+ * 다른 CV 섹션보다 한 단계 낮춘 보조 정보다. 큰 섹션 제목 대신 스킬 그룹명과 같은 120px
+ * 라벨 칸을 쓰고, 과목은 작은 글씨로 옆으로 흘린다.
+ * 같은 학기 과목은 한 줄로 묶고 학기는 줄 앞에 한 번만 쓴다 — 과목마다 괄호로 붙이면
+ * 같은 학기가 반복되어 읽기 어렵다.
+ *
+ * CRITICAL: courses가 비면 섹션 전체를 렌더링하지 않는다.
+ * CRITICAL: 최근 학기가 위로 온다(학적·경력 타임라인과 같은 방향). 해석할 수 없는 학기
+ *   문자열은 그 아래에 적힌 순서대로, 학기를 비운 과목은 맨 아래 "기타" 줄로 모인다.
+ *   학기를 하나도 적지 않았으면 학기 칸 없이 과목만 나온다.
+ * CRITICAL: 관련 글을 공개 글 목록에서 찾지 못하면 링크를 만들지 않는다 — 초안이거나
+ *   지워진 글로 가는 죽은 링크가 배포된다.
+ */
+const { lang, t } = i18n(Astro.url);
+
+/**
+ * 현재 언어 칸이 비어 있으면 다른 언어 값으로 대신한다.
+ * 과목명은 영어로만 쓰는 경우가 많다 — 관리자에서 "언어별"을 켜고 EN 칸만 채우면
+ * `{ ko: '', en: '...' }`가 저장되고, 대체가 없으면 한국어 화면에 이름 없는 항목이 생긴다.
+ */
+const pick = (value: MaybeLocalized | undefined): string | undefined =>
+  (text(value, lang) || text(value, otherLang(lang)) || '').trim() || undefined;
+
+const show = (value: MaybeLocalized | undefined): string | undefined => {
+  const resolved = pick(value);
+  return resolved && !isPlaceholder(resolved) ? resolved : undefined;
+};
+
+/**
+ * 두 가지 형식을 받는다.
+ *   학년-학기  "1-1" · "1-2" · "1-summer" · "1" → ko "1-1" / en "Year 1, Spring"
+ *   연도-학기  "2026-1" · "2026-summer" · "2026" → ko "2026년 1학기" / en "Spring 2026"
+ * 학년은 한 자리, 연도는 네 자리로 가른다.
+ */
+const TERM = /^(\d{4}|[1-6])(?:-(1|2|summer|winter))?$/;
+const SEMESTER = { '1': 'first', '2': 'second', summer: 'summer', winter: 'winter' } as const;
+/** 한 해 안의 순서 — 1학기 → 여름 → 2학기 → 겨울. 학년·연도만 적은 값은 그 해의 맨 뒤로 본다 */
+const PART_ORDER = { '1': 1, summer: 2, '2': 3, winter: 4 } as const;
+
+/** 정렬 순위 — 클수록 위. 해석한 학기 > 해석 못 한 문자열(-1) > 학기 없음(-2) */
+function parseTerm(value: string | undefined): { label: string; rank: number } {
+  const raw = value?.trim() ?? '';
+  if (raw === '') return { label: '', rank: -2 };
+  const match = TERM.exec(raw);
+  if (!match) return { label: raw, rank: -1 };
+  const [, head, part] = match;
+  const isYear = head.length === 4;
+  const key = part as keyof typeof SEMESTER | undefined;
+  const rank = Number(head) * 10 + (key ? PART_ORDER[key] : 5);
+
+  if (!key) return { label: isYear ? head : t.profile.yearLevel(head), rank };
+  const semester = SEMESTER[key];
+  return {
+    label: isYear
+      ? t.profile.term(head, t.profile.semester[semester])
+      : t.profile.gradeTerm(head, semester),
+    rank,
+  };
+}
+
+// 관련 글이 하나도 없으면 컬렉션을 읽지 않는다.
+const needsPosts = PROFILE.courses.some((course) => course.post);
+const postsByKey = new Map(
+  (needsPosts ? postsForLang(await getPublishedPosts(), lang) : []).map((post) => [
+    `${post.data.category}/${post.data.slug}`,
+    post,
+  ]),
+);
+
+const entries = PROFILE.courses.flatMap((course, index) => {
+  const name = pick(course.name);
+  // 두 언어 모두 빈 과목명은 빈 항목이 된다
+  if (!name) return [];
+
+  const post = course.post ? postsByKey.get(course.post) : undefined;
+  // 언어마다 한 번씩 나오면 같은 경고가 두 번 찍히므로 기본 언어 빌드에서만 낸다.
+  if (course.post && !post && lang === DEFAULT_LANG) {
+    console.warn(
+      `[profile] courses[${index}].post "${course.post}"에 해당하는 공개 글이 없어 링크를 생략합니다`,
+    );
+  }
+
+  return [
+    {
+      term: parseTerm(course.term),
+      name,
+      meta: [
+        // 독학 과목은 제공처를, 제공처가 없으면 "독학"을 붙인다
+        show(course.provider) ?? (course.kind === 'self' ? t.profile.selfStudy : undefined),
+        course.grade ? t.profile.grade(course.grade) : undefined,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      link: post ? { href: postHref(post, lang), title: post.data.title } : undefined,
+    },
+  ];
+});
+
+type Entry = (typeof entries)[number];
+const groups: { label: string; rank: number; entries: Entry[] }[] = [];
+for (const entry of entries) {
+  const found = groups.find((group) => group.label === entry.term.label);
+  if (found) found.entries.push(entry);
+  else groups.push({ ...entry.term, entries: [entry] });
+}
+// Array.prototype.sort는 안정 정렬이다 — 순위가 같은 줄은 처음 적힌 순서를 지킨다.
+groups.sort((a, b) => b.rank - a.rank);
+
+const showTerms = groups.some((group) => group.label !== '');
+---
+
+{
+  groups.length > 0 && (
+    <section class="cv-section courses-section" aria-labelledby="courses-heading">
+      <h2 class="eyebrow courses-heading" id="courses-heading">
+        {t.profile.courses}
+      </h2>
+
+      <div class:list={['terms', { 'with-terms': showTerms }]} data-reveal>
+        {groups.map((group) => {
+          const label = group.label || t.profile.otherTerm;
+          return (
+            <>
+              {showTerms && (
+                <p class="term" aria-hidden="true">
+                  {label}
+                </p>
+              )}
+              <ul class="courses" aria-label={showTerms ? label : undefined}>
+                {group.entries.map((entry) => (
+                  <li class="course">
+                    {entry.link ? (
+                      <a class="course-link" href={entry.link.href}>
+                        {entry.name}
+                        <span class="visually-hidden">
+                          {' '}
+                          — {t.profile.relatedPost}: {entry.link.title}
+                        </span>
+                      </a>
+                    ) : (
+                      <span>{entry.name}</span>
+                    )}
+                    {entry.meta && <span class="course-meta">({entry.meta})</span>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          );
+        })}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* 모바일: 라벨 위, 과목 아래 / 640px 이상: SkillGroups와 같은 120px 라벨 칸 */
+  .courses-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-ext-2);
+  }
+
+  @media (min-width: 640px) {
+    .courses-section {
+      grid-template-columns: 120px minmax(0, 1fr);
+      align-items: baseline;
+      gap: var(--spacing-ext-4);
+    }
+  }
+
+  /* 학기 칸 | 과목 — 학기 칸 폭은 가장 긴 학기 표기에 맞춰 모든 줄이 같다.
+     모바일에서도 쌓지 않는다: "1-2"처럼 짧은 표기가 혼자 한 줄을 차지해 세로로만 길어졌다 */
+  .terms {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--spacing-ext-2) var(--spacing-ext-3);
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+  }
+
+  .terms.with-terms {
+    grid-template-columns: max-content minmax(0, 1fr);
+  }
+
+  @media (min-width: 640px) {
+    .terms {
+      row-gap: var(--spacing-ext-1);
+      column-gap: var(--spacing-ext-5);
+    }
+  }
+
+  .term {
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .courses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--spacing-ext-2);
+    list-style: none;
+    color: var(--fg-secondary);
+  }
+
+  /* 구분점은 항목 뒤에 붙인다 — 앞에 붙이면 줄이 감길 때 점이 줄머리로 가서
+     첫 항목만 점이 없는 글머리표 목록처럼 보인다 */
+  .course:not(:last-child)::after {
+    content: '·';
+    margin-left: var(--spacing-ext-2);
+    color: var(--fg-muted);
+  }
+
+  .course-meta {
+    margin-left: var(--spacing-ext-1);
+    color: var(--fg-muted);
+  }
+
+  .course-link {
+    position: relative;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  /* 최소 히트 영역 44px (WCAG 2.5.8) — 글자는 작게 두고 누르는 영역만 넓힌다 */
+  .course-link::after {
+    content: '';
+    position: absolute;
+    inset: -12px -4px;
+  }
+
+  .course-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+</style>

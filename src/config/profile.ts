@@ -68,6 +68,33 @@ export interface SkillGroup {
   items: MaybeLocalized[];
 }
 
+/** 과목 구분. UI 표기는 CourseList가 담당한다. */
+export type CourseKind = 'school' | 'self';
+
+export interface CourseEntry {
+  /** 과목명. 예: "선형대수", { ko: '확률과 통계', en: 'Probability and Statistics' } */
+  name: MaybeLocalized;
+  /** 학교 수업이면 'school', 온라인 강의·독학이면 'self' */
+  kind: CourseKind;
+  /**
+   * 수강 시기. 두 형식 중 하나로 쓴다.
+   *   학년-학기 "1-1" · "1-2" · "1-summer" · "1-winter" → ko "1-1" / en "Year 1, Spring"
+   *   연도-학기 "2026-1" · "2026-2" · "2026-summer" · "2026" → ko "2026년 1학기" / en "Spring 2026"
+   * 같은 값끼리 홈에서 한 줄로 묶인다. 형식이 다르면 적은 그대로 나온다.
+   * 비우면 맨 아래 "기타" 줄로 간다
+   */
+  term?: string;
+  /** 독학 강의의 제공처. 예: "Stanford CS231n", "Coursera". 비우면 해당 표기만 생략 */
+  provider?: MaybeLocalized;
+  /** 성적. 예: "A+". 비우면 성적을 표시하지 않는다 */
+  grade?: string;
+  /**
+   * 관련 글 — "카테고리/slug". 예: "paper-review/world-models".
+   * 공개 글에서 찾지 못하면(초안·삭제·오타) 링크 없이 과목만 나오고 빌드 로그에 경고가 남는다
+   */
+  post?: string;
+}
+
 /** 아이콘 매핑 키. 목록에 없는 서비스는 `homepage`를 쓴다. */
 export type SocialType = 'github' | 'scholar' | 'linkedin' | 'x' | 'email' | 'orcid' | 'homepage';
 
@@ -92,6 +119,7 @@ export interface Profile {
   career: CareerEntry[];
   skillGroups: SkillGroup[];
   interests: MaybeLocalized[];
+  courses: CourseEntry[];
   links: SocialLink[];
   /** 언어별로 다른 파일을 두려면 `{ ko: '/cv-ko.pdf', en: '/cv-en.pdf' }` */
   cvUrl?: MaybeLocalized;
@@ -161,10 +189,23 @@ export const PROFILE: Profile = {
   ],
 
   /** 스킬 그룹 (최대 5그룹 권장). 비우면 스킬 섹션 전체가 사라집니다. */
-  skillGroups: [{ name: '', items: ['Python'] }],
+  skillGroups: [{ name: '', items: ['Python', 'C'] }],
 
   /** 연구 관심 분야 (최대 8개). 비우면 관심 분야 섹션 전체가 사라집니다. */
   interests: ['World Model'],
+
+  /**
+   * 수강 과목 — 관심 분야 아래에 작은 글씨로 나옵니다.
+   * 같은 학기(term) 과목은 한 줄로 묶이고 최근 학기가 위에 옵니다.
+   * 비우면 수강 과목 섹션 전체가 사라집니다.
+   */
+  courses: [
+    { name: { ko: '', en: 'Mathematics For Computer Science I' }, kind: 'school', term: '2026-1' },
+    { name: { ko: '', en: 'Computer Programming I' }, kind: 'school', term: '2026-1' },
+    { name: { ko: '', en: 'Mathematics For Computer Science II' }, kind: 'school', term: '2026-2' },
+    { name: { ko: '', en: 'Theory of Computation' }, kind: 'school', term: '2026-2' },
+    { name: 'Artificial Intelligence', kind: 'school', term: '2026-2' },
+  ],
 
   /**
    * 외부 링크 (최대 6개).
