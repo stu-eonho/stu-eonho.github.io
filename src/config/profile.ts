@@ -200,11 +200,11 @@ export const PROFILE: Profile = {
    * 비우면 수강 과목 섹션 전체가 사라집니다.
    */
   courses: [
-    { name: { ko: '', en: 'Mathematics For Computer Science I' }, kind: 'school', term: '2026-1' },
-    { name: { ko: '', en: 'Computer Programming I' }, kind: 'school', term: '2026-1' },
-    { name: { ko: '', en: 'Mathematics For Computer Science II' }, kind: 'school', term: '2026-2' },
-    { name: { ko: '', en: 'Theory of Computation' }, kind: 'school', term: '2026-2' },
-    { name: 'Artificial Intelligence', kind: 'school', term: '2026-2' },
+    { name: { ko: '', en: 'Mathematics For Computer Science I' }, kind: 'school', term: '1-1' },
+    { name: { ko: '', en: 'Computer Programming I' }, kind: 'school', term: '1-1' },
+    { name: { ko: '', en: 'Mathematics For Computer Science II' }, kind: 'school', term: '1-2' },
+    { name: { ko: '', en: 'Theory of Computation' }, kind: 'school', term: '1-2' },
+    { name: 'Artificial Intelligence', kind: 'school', term: '1-2' },
   ],
 
   /**
