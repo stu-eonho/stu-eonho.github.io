@@ -134,8 +134,15 @@ const navItems: NavItem[] = [
     white-space: nowrap;
   }
 
+  /* CRITICAL: flex-basis를 auto로 둔다. `flex: 1`(= basis 0)이면 내비가 "남고 나서의
+     공간"만 배정받아, 폭이 모자랄 때 브랜드는 원래 크기 그대로인 채 내비만 찌그러져
+     라벨이 두 줄로 접힌다(850px에서 실측). basis를 내용 폭으로 두어야 부족분을
+     말줄임이 가능한 브랜드가 흡수한다. */
   .nav-desktop {
-    flex: 1;
+    /* shrink를 0으로 둔다. 1이면 내비 칸이 내용보다 작아지고, 항목은 줄지 않으므로
+       내용이 칸 밖으로 새어 나와 브랜드·액션과의 16px 간격을 먹는다(768px에서 실측). */
+    flex: 1 0 auto;
+    min-width: 0;
     display: flex;
     justify-content: center;
   }
@@ -145,6 +152,18 @@ const navItems: NavItem[] = [
     align-items: center;
     gap: var(--spacing-ext-5); /* 20px */
     list-style: none;
+  }
+
+  /* 항목이 줄어들면 라벨이 접힌다. 줄어드는 쪽은 브랜드 하나로 고정한다. */
+  .nav-list > li {
+    flex-shrink: 0;
+  }
+
+  /* 1024px 미만에서는 항목 간격을 좁힌다 — 브랜드가 과하게 잘리는 것을 늦춘다 */
+  @media (max-width: 1023px) {
+    .nav-list {
+      gap: var(--spacing-compact); /* 8px */
+    }
   }
 
   .header-actions {

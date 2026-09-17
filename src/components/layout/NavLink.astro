@@ -27,6 +27,9 @@ const { href, active } = Astro.props;
     font-size: var(--text-body); /* [verified] product-gallery-tab 17px / 400 */
     line-height: var(--text-body--line-height);
     font-weight: 400;
+    /* CRITICAL: 라벨은 절대 두 줄로 접히지 않는다. "Paper Review"가 좁은 폭에서
+       "Paper / Review"로 접혀 56px 헤더를 넘치던 결함을 막는다. */
+    white-space: nowrap;
     color: var(--fg-muted);
     text-decoration: none;
     transition: color var(--duration-micro) var(--ease-standard);
