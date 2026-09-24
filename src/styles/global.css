@@ -303,6 +303,11 @@ html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
   background-color: var(--canvas);
+  /* [local extension] 스크롤바 자리를 항상 비워 둔다.
+     짧은 페이지(글이 없는 카테고리 등)에는 스크롤바가 없어 본문 폭이 15px 넓어지는데,
+     그만큼 헤더 브랜드의 말줄임 위치와 내비 시작점이 페이지마다 달라진다. 이동할 때마다
+     레이아웃이 가로로 튀는 원인이므로 자리를 고정한다. */
+  scrollbar-gutter: stable;
 }
 
 body {

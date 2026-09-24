@@ -252,6 +252,8 @@ export const L = {
     coursePostMissing: '찾을 수 없는 글',
     courseDraft: '초안',
     links: '링크',
+    linksHint:
+      '주소만 적어도 됩니다 — 저장할 때 종류가 이메일이면 mailto:, 나머지는 https:// 를 붙입니다.',
     localized: '언어별',
     placeholder: '미기입',
     present: '진행 중',

@@ -8,7 +8,7 @@ import CareerList from './CareerList.astro';
 import SkillGroups from './SkillGroups.astro';
 import InterestList from './InterestList.astro';
 import CourseList from './CourseList.astro';
-import { PROFILE, PROFILE_PHOTO, isPlaceholder, type SocialType } from '@/config/profile';
+import { PROFILE, PROFILE_PHOTO, isPlaceholder, socialHref, type SocialType } from '@/config/profile';
 import { i18n, text } from '@/config/i18n';
 
 /**
@@ -52,7 +52,10 @@ const affiliation = top
 const currentJob = PROFILE.career.find((entry) => entry.endDate === null);
 
 // CRITICAL: 플레이스홀더 URL로는 링크를 만들지 않는다 — 깨진 링크가 배포된다.
-const links = PROFILE.links.filter((link) => !isPlaceholder(link.url));
+// CRITICAL: href는 `socialHref`를 거친다 — 스킴 없는 값이 사이트 내부 경로가 되는 것을 막는다.
+const links = PROFILE.links
+  .filter((link) => !isPlaceholder(link.url))
+  .map((link) => ({ ...link, href: socialHref(link) }));
 const cvHref = text(PROFILE.cvUrl, lang);
 const cvUrl = cvHref && !isPlaceholder(cvHref) ? cvHref : undefined;
 
@@ -132,10 +135,10 @@ const hasCvBody =
                 <li>
                   <a
                     class="social-link"
-                    href={link.url}
+                    href={link.href}
                     aria-label={text(link.label, lang)}
-                    target={link.url.startsWith('mailto:') ? undefined : '_blank'}
-                    rel={link.url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                    target={link.href.startsWith('mailto:') ? undefined : '_blank'}
+                    rel={link.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
                   >
                     <Icon
                       name={SOCIAL_ICON[link.type] ?? SOCIAL_ICON.homepage}

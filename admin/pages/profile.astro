@@ -239,6 +239,7 @@ const LINK_TYPES = ['github', 'scholar', 'linkedin', 'x', 'email', 'orcid', 'hom
     {/* ---------- 링크 ---------- */}
     <Card>
       <h2 class="admin-section-title">{L.profile.links}</h2>
+      <p class="admin-hint" style="margin-bottom: var(--spacing-ext-4)">{L.profile.linksHint}</p>
       <RepeatableList path="links" addLabel="링크 추가" emptyNote={L.profile.emptySection} max={6}>
         <div class="admin-field">
           <label class="admin-label" for="link-type">종류</label>
@@ -248,7 +249,13 @@ const LINK_TYPES = ['github', 'scholar', 'linkedin', 'x', 'email', 'orcid', 'hom
         </div>
         <div class="admin-field">
           <label class="admin-label" for="link-url">URL</label>
-          <input class="admin-input" id="link-url" type="text" data-name="url" />
+          <input
+            class="admin-input"
+            id="link-url"
+            type="text"
+            placeholder="https://github.com/id"
+            data-name="url"
+          />
         </div>
         <LocalizedField label="라벨" path="label" />
       </RepeatableList>

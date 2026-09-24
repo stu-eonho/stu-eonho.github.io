@@ -1,6 +1,6 @@
 /** canonical / OG / Twitter / hreflang 메타와 JSON-LD 조립. */
 import { SITE } from '@/config/site';
-import { PROFILE, isPlaceholder, type Profile } from '@/config/profile';
+import { PROFILE, isPlaceholder, socialHref, type Profile } from '@/config/profile';
 import {
   DEFAULT_LANG,
   LANG_META,
@@ -102,7 +102,13 @@ function clean(value: string | undefined): string | undefined {
 export function personJsonLd(lang: Lang, profile: Profile = PROFILE): string {
   const affiliation = profile.education[0];
   const currentJob = profile.career.find((entry) => entry.endDate === null);
-  const sameAs = profile.links.map((l) => l.url).filter((url) => !isPlaceholder(url));
+  /*
+    CRITICAL: `sameAs`는 "같은 사람의 다른 프로필 **URL**"이다. 이메일은 여기가 아니라
+    Person의 `email`로 간다 — 스킴 없는 생이메일을 URL 자리에 넣으면 잘못된 구조화 데이터가 된다.
+  */
+  const hrefs = profile.links.filter((l) => !isPlaceholder(l.url)).map(socialHref);
+  const sameAs = hrefs.filter((url) => /^https?:/i.test(url));
+  const mailHref = hrefs.find((url) => url.startsWith('mailto:'));
   const school = affiliation ? text(affiliation.school, lang) : undefined;
   const company = currentJob ? text(currentJob.company, lang) : undefined;
 
@@ -112,7 +118,7 @@ export function personJsonLd(lang: Lang, profile: Profile = PROFILE): string {
     name: clean(text(profile.name, lang)) ?? SITE.title,
     alternateName: clean(text(profile.nameEn, lang)),
     description: clean(text(profile.bio, lang)),
-    email: clean(text(profile.email, lang)),
+    email: clean(text(profile.email, lang)) ?? mailHref?.slice('mailto:'.length),
     url: absolute(withLang('/', lang)),
     affiliation: clean(school) ? { '@type': 'Organization', name: school } : undefined,
     worksFor: clean(company) ? { '@type': 'Organization', name: company } : undefined,

@@ -100,10 +100,31 @@ export type SocialType = 'github' | 'scholar' | 'linkedin' | 'x' | 'email' | 'or
 
 export interface SocialLink {
   type: SocialType;
-  /** 절대 URL. type이 email이면 `mailto:` 스킴 */
+  /** 절대 URL. type이 email이면 `mailto:` 스킴 — 스킴을 빠뜨려도 `socialHref`가 채운다 */
   url: string;
   /** aria-label 및 툴팁 텍스트 */
   label: MaybeLocalized;
+}
+
+/**
+ * `SocialLink.url`을 실제로 따라갈 수 있는 href로 바꾼다.
+ *
+ * CRITICAL: 스킴이 없는 값을 그대로 `href`에 넣으면 브라우저가 **상대 경로**로 읽는다 —
+ * `eonho@korea.ac.kr`은 `https://<사이트>/eonho@korea.ac.kr`이라는 내부 링크가 되어 404로
+ * 떨어진다. 손으로 적었든 관리자에서 저장했든 표시 직전에 여기서 한 번 더 바로잡는다.
+ *
+ * 규칙: 스킴이 있으면 그대로 → `//`는 https → `/`·`#`는 의도된 내부 링크라 그대로 →
+ * email 타입이거나 이메일 모양이면 `mailto:` → 나머지 스킴 없는 값은 `https://`.
+ */
+export function socialHref(link: SocialLink): string {
+  const url = link.url.trim();
+  // 꺾쇠 플레이스홀더는 건드리지 않는다 — `https://<...>`로 만들면 미기입 판정이 깨진다.
+  if (url === '' || isPlaceholder(url)) return url;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(url)) return url;
+  if (url.startsWith('//')) return `https:${url}`;
+  if (url.startsWith('/') || url.startsWith('#')) return url;
+  if (link.type === 'email' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) return `mailto:${url}`;
+  return `https://${url}`;
 }
 
 export interface Profile {
@@ -192,7 +213,7 @@ export const PROFILE: Profile = {
   skillGroups: [{ name: '', items: ['Python', 'C'] }],
 
   /** 연구 관심 분야 (최대 8개). 비우면 관심 분야 섹션 전체가 사라집니다. */
-  interests: ['World Model'],
+  interests: ['World Model', 'Robotics', 'Computer Vision'],
 
   /**
    * 수강 과목 — 관심 분야 아래에 작은 글씨로 나옵니다.
@@ -211,7 +232,11 @@ export const PROFILE: Profile = {
    * 외부 링크 (최대 6개).
    * 비우면 소셜 아이콘 행 전체가 사라집니다.
    */
-  links: [{ type: 'github', url: '<https://github.com/username>', label: 'GitHub' }],
+  links: [
+    { type: 'github', url: 'https://github.com/stu-eonho', label: 'GitHub' },
+    { type: 'linkedin', url: 'http://www.linkedin.com/in/eonho', label: 'LinkedIn' },
+    { type: 'email', url: 'mailto:eonho@korea.ac.kr', label: 'Email' },
+  ],
 
   /**
    * CV 링크. 게시하려면 `public/cv.pdf`에 파일을 넣고 '/cv.pdf'로 두세요.

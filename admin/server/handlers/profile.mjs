@@ -46,6 +46,29 @@ export async function findProfilePhoto(projectRoot) {
   return { name: matches[0] ?? null, duplicates: matches.slice(1) };
 }
 
+/**
+ * 링크 URL을 저장 직전에 정규화한다.
+ *
+ * CRITICAL: 폼에 `eonho@korea.ac.kr`처럼 스킴 없이 적으면 브라우저가 사이트 내부 경로로
+ * 읽어 404가 된다. 화면(`ProfileCard`·`SiteFooter`)도 같은 함수를 거치지만, 파일에
+ * 바른 값이 남아야 JSON-LD·다시 열었을 때의 폼 값까지 한 벌로 맞는다.
+ *
+ * 규칙은 `src/config/profile.ts`의 `socialHref` 한 곳에만 있다 — 여기서 다시 구현하지 않는다.
+ *
+ * @param {any} profile
+ * @param {any} server
+ */
+async function normalizeLinks(profile, server) {
+  if (!Array.isArray(profile?.links)) return profile;
+  const { socialHref } = await loadProfile(server);
+  return {
+    ...profile,
+    links: profile.links.map((/** @type {any} */ link) =>
+      typeof link?.url === 'string' ? { ...link, url: socialHref(link) } : link,
+    ),
+  };
+}
+
 /** @param {{ projectRoot: string, server: any }} ctx */
 export async function readProfile({ projectRoot, server }) {
   const file = configFile(projectRoot, 'profile');
@@ -62,14 +85,15 @@ export async function readProfile({ projectRoot, server }) {
   };
 }
 
-/** @param {{ body: any, projectRoot: string, logger: any }} ctx */
-export async function writeProfile({ body, projectRoot, logger }) {
+/** @param {{ body: any, projectRoot: string, server: any, logger: any }} ctx */
+export async function writeProfile({ body, projectRoot, server, logger }) {
   const file = configFile(projectRoot, 'profile');
+  const profile = await normalizeLinks(body.profile, server);
   const { mtime, changed } = await writeDeclaration({
     projectRoot,
     file,
     declName: 'PROFILE',
-    value: body.profile,
+    value: profile,
     baseMtime: body.baseMtime,
     preserveComments: true,
     logger,
