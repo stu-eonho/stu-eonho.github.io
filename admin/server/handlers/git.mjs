@@ -96,6 +96,80 @@ async function trackingInfo(projectRoot) {
 }
 
 /**
+ * `.github/workflows/readme.yml`의 봇이 배포 뒤 커밋하는 파일.
+ * 원격이 **이 파일들만** 앞서 있으면 푸시 전에 자동으로 rebase한다 — 글을 올릴 때마다
+ * 봇 커밋이 생기므로, 그때마다 터미널에서 `git pull`을 하라고 할 수는 없다.
+ */
+const BOT_PATHS = new Set(['README.md', 'README.ko.md']);
+
+/**
+ * 뒤진 커밋을 자동으로 합쳐도 되는가.
+ *
+ * 원격 쪽 변경이 전부 `BOT_PATHS` 안이고, 그 파일들에 커밋 안 된 로컬 변경이 없어야 한다.
+ * 그래야 `--autostash`로 치워 둔 작업 트리가 충돌 없이 돌아온다.
+ *
+ * @param {string} projectRoot
+ * @param {{ upstream: string | null, behind: number }} tracking
+ * @returns {Promise<boolean>}
+ */
+async function canAutoSync(projectRoot, tracking) {
+  if (!tracking.upstream || tracking.behind === 0) return false;
+  try {
+    // `A...B`는 공통 조상 이후 B 쪽에서 바뀐 것만 — 원격이 한 변경이다.
+    const { stdout: remoteChanged } = await git(projectRoot, [
+      'diff',
+      '--name-only',
+      `HEAD...${tracking.upstream}`,
+    ]);
+    const paths = remoteChanged.split('\n').filter(Boolean);
+    if (paths.length === 0 || !paths.every((p) => BOT_PATHS.has(p))) return false;
+
+    const { stdout: dirty } = await git(projectRoot, [
+      'status',
+      '--porcelain=v1',
+      '--',
+      ...BOT_PATHS,
+    ]);
+    return dirty.trim() === '';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 원격을 확인하고, 봇 커밋만 앞서 있으면 그 위로 rebase한다.
+ * 그 밖의 경우는 건드리지 않는다 — 판단은 호출한 쪽의 거절 규칙에 맡긴다.
+ *
+ * @param {string} projectRoot
+ */
+async function syncBotCommits(projectRoot) {
+  // 업스트림이 없으면 받아 올 곳도 없다. 거절 안내는 호출한 쪽이 한다.
+  const before = await trackingInfo(projectRoot);
+  if (!before.upstream) return before;
+
+  try {
+    await git(projectRoot, ['fetch']);
+  } catch (error) {
+    throw fail('E-GIT', `원격 상태를 확인하지 못했습니다: ${gitErrorMessage(error)}`);
+  }
+
+  const tracking = await trackingInfo(projectRoot);
+  if (!(await canAutoSync(projectRoot, tracking))) return tracking;
+
+  try {
+    await git(projectRoot, ['rebase', '--autostash', /** @type {string} */ (tracking.upstream)]);
+  } catch (error) {
+    // 로컬 커밋도 README를 고쳤다면 여기서 충돌한다. 반쯤 된 rebase를 남기지 않는다.
+    await git(projectRoot, ['rebase', '--abort']).catch(() => {});
+    throw fail(
+      'E-GIT',
+      `원격의 README 자동 갱신을 합치지 못했습니다. 터미널에서 \`git pull\`로 합친 뒤 푸시하세요. (${gitErrorMessage(error)})`,
+    );
+  }
+  return trackingInfo(projectRoot);
+}
+
+/**
  * 원격 URL. 자격 증명이 박힌 URL은 사용자 자신의 것이므로 그대로 보여 준다.
  * @param {string} projectRoot
  * @returns {Promise<string | null>}
@@ -147,6 +221,7 @@ export async function gitStatus({ projectRoot, server }) {
       upstream: null,
       ahead: 0,
       behind: 0,
+      autoSync: false,
       remote: null,
       drafts: 0,
     };
@@ -175,6 +250,8 @@ export async function gitStatus({ projectRoot, server }) {
     remote,
     drafts,
     ...tracking,
+    // 화면이 "pull 필요"로 막지 않고 "푸시할 때 합친다"로 안내하게 한다.
+    autoSync: await canAutoSync(projectRoot, tracking),
   };
 }
 
@@ -254,7 +331,7 @@ export async function gitCommit({ body, projectRoot }) {
  * @param {{ projectRoot: string }} ctx
  */
 export async function gitPush({ projectRoot }) {
-  const tracking = await trackingInfo(projectRoot);
+  const tracking = await syncBotCommits(projectRoot);
   if (!tracking.upstream) {
     throw fail(
       'E-GIT',

@@ -1,0 +1,47 @@
+name: Update README
+
+# 배포가 끝난 뒤 실제 사이트의 RSS로 README의 "최근 글" 표를 다시 쓴다.
+# 배포 전 피드를 읽으면 아직 공개되지 않은 상태와 표가 어긋난다.
+on:
+  workflow_run:
+    workflows: [Deploy to GitHub Pages]
+    types: [completed]
+  workflow_dispatch:
+
+# README 커밋에만 쓰기 권한이 필요하다.
+permissions:
+  contents: write
+
+concurrency:
+  group: readme
+  cancel-in-progress: true
+
+jobs:
+  update:
+    # 배포가 실패했으면 사이트가 바뀌지 않았으므로 할 일이 없다.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      # 의존성이 없는 스크립트라 러너에 깔린 Node로 충분하다.
+      - name: Rewrite recent posts
+        run: node scripts/update-readme.mjs
+
+      # GITHUB_TOKEN으로 만든 커밋은 다른 워크플로를 깨우지 않는다 — 배포가 다시 돌지 않는다.
+      # CRITICAL: README 두 파일만 커밋한다. 관리자 콘솔의 자동 pull이 이 전제에 기대고 있다.
+      - name: Commit
+        run: |
+          if git diff --quiet -- README.md README.ko.md; then
+            echo "변경 없음"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898283+github-actions[bot]@users.noreply.github.com'
+          git add README.md README.ko.md
+          git commit -m 'docs(readme): update recent posts'
+          git pull --rebase
+          git push

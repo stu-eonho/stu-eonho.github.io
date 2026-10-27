@@ -68,6 +68,8 @@ export const L = {
     aheadCount: (n: number) => `푸시 대기 중인 커밋 ${n}개`,
     nothingToPush: '푸시할 커밋이 없습니다',
     behindWarning: (n: number) => `원격이 ${n}개 앞서 있습니다 — 먼저 git pull이 필요합니다`,
+    autoSyncNote: (ahead: number) =>
+      `푸시 대기 중인 커밋 ${ahead}개 · 원격의 README 자동 갱신은 푸시할 때 함께 합칩니다`,
     noUpstream: '업스트림 브랜치가 없습니다',
     manualCommands: '터미널에서 직접 하기',
     pushConfirmTitle: '푸시하시겠습니까?',

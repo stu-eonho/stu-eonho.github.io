@@ -38,6 +38,8 @@ interface GitResponse {
   upstream: string | null;
   ahead: number;
   behind: number;
+  /** 원격이 README 봇 커밋만 앞서 있어 푸시할 때 자동으로 합칠 수 있다 */
+  autoSync: boolean;
   drafts: number;
 }
 
@@ -153,11 +155,14 @@ function syncPushState(data: GitResponse): void {
   if (!data.upstream) {
     text = L.dashboard.noUpstream;
     blocked = true;
-  } else if (data.behind > 0) {
+  } else if (data.behind > 0 && !data.autoSync) {
     // CRITICAL: 뒤진 상태에서 푸시를 유도하지 않는다. 강제 푸시 경로를 두지 않으므로
     // 여기서 막고 `git pull`을 안내한다.
     text = L.dashboard.behindWarning(data.behind);
     blocked = true;
+  } else if (data.behind > 0 && data.ahead > 0) {
+    // 원격이 README 봇 커밋만 앞서 있다 — 서버가 푸시 직전에 rebase한다.
+    text = L.dashboard.autoSyncNote(data.ahead);
   } else if (data.ahead === 0) {
     text = L.dashboard.nothingToPush;
   }

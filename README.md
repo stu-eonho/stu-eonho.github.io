@@ -1,8 +1,21 @@
+<a href="https://stu-eonho.github.io/en">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+    <img src="docs/assets/banner-light.svg" alt="Pit Stop for Ideas — Paper Review · Project · Notes" width="100%">
+  </picture>
+</a>
+
 # Eonho Lee
 
-Undergraduate in Computer Science and Engineering at **Korea University**.
-I read papers, build things, and keep notes on both — in public, so that what I learn
-leaves a trace I can go back to.
+[![Blog](https://img.shields.io/badge/Blog-Pit_Stop_for_Ideas-0071e3?style=flat-square&logo=rss&logoColor=white)](https://stu-eonho.github.io/en)
+[![Email](https://img.shields.io/badge/Email-eonho%40korea.ac.kr-1d1d1f?style=flat-square)](mailto:eonho@korea.ac.kr)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-eonho-0a66c2?style=flat-square)](https://www.linkedin.com/in/eonho)
+[![GitHub](https://img.shields.io/badge/GitHub-stu--eonho-1d1d1f?style=flat-square&logo=github&logoColor=white)](https://github.com/stu-eonho)
+![Python](https://img.shields.io/badge/Python-3776ab?style=flat-square&logo=python&logoColor=white)
+![C](https://img.shields.io/badge/C-00599c?style=flat-square&logo=c&logoColor=white)
+
+Hi! I'm Eonho Lee, an undergraduate in **Computer Science and Engineering at Korea University**
+who wants to explore the world. Through this blog, I keep a record of what I feel and learn.
 
 **Study log → [Pit Stop for Ideas](https://stu-eonho.github.io)**
 ([한국어](https://stu-eonho.github.io/) · [English](https://stu-eonho.github.io/en))
@@ -20,42 +33,29 @@ Read this in [한국어](README.ko.md).
 
 ## Recent writing
 
-| Date       | Post                                                                                                                 | Category     |
-| ---------- | -------------------------------------------------------------------------------------------------------------------- | ------------ |
-| 2026-09-17 | [Retrieval-Augmented Generation (RAG)](https://stu-eonho.github.io/en/paper-review/rag) — Lewis et al., NeurIPS 2020 | Paper Review |
-| 2026-09-01 | [제13회 AIKUTHON](https://stu-eonho.github.io/en/notes/13-aikuthon) — a datathon hosted by AIKU                      | Notes        |
-| 2026-08-26 | [World Models](https://stu-eonho.github.io/en/paper-review/world-models) — Ha & Schmidhuber, NeurIPS 2018            | Paper Review |
-| 2026-08-25 | [Hello](https://stu-eonho.github.io/en/notes/hello)                                                                  | Notes        |
+<!-- recent-posts:start -->
+<!-- prettier-ignore-start -->
+| Date | Post | Category |
+| --- | --- | --- |
+| 2026-09-17 | [Retrieval-Augmented Generation (RAG)](https://stu-eonho.github.io/en/paper-review/rag) | Paper Review |
+| 2026-09-01 | [제13회 AIKUTHON](https://stu-eonho.github.io/en/notes/13-aikuthon) | Notes |
+| 2026-08-26 | [World Models](https://stu-eonho.github.io/en/paper-review/world-models) | Paper Review |
+| 2026-08-25 | [Hello](https://stu-eonho.github.io/en/notes/hello) | Notes |
+<!-- prettier-ignore-end -->
+<!-- recent-posts:end -->
 
-Everything is browsable by [category](https://stu-eonho.github.io/en/paper-review), by
-[tag](https://stu-eonho.github.io/en/tags), by [date](https://stu-eonho.github.io/en/archive),
-or by [full-text search](https://stu-eonho.github.io/en/search) —
-and there is an [RSS feed](https://stu-eonho.github.io/en/rss.xml).
+[Categories](https://stu-eonho.github.io/en/paper-review) ·
+[Tags](https://stu-eonho.github.io/en/tags) ·
+[Archive](https://stu-eonho.github.io/en/archive) ·
+[Full-text search](https://stu-eonho.github.io/en/search) ·
+[RSS](https://stu-eonho.github.io/en/rss.xml)
 
-## Coursework
-
-| Term           | Courses                                                                               |
-| -------------- | ------------------------------------------------------------------------------------- |
-| Year 1, Fall   | Mathematics For Computer Science II · Theory of Computation · Artificial Intelligence |
-| Year 1, Spring | Mathematics For Computer Science I · Computer Programming I                           |
-
-Languages I work in: **Python**, **C**.
+Main languages: **Python**, **C**
 
 ## Contact
 
-📍 Gyeonggi-do, South Korea
-✉️ [eonho@korea.ac.kr](mailto:eonho@korea.ac.kr)
-🔗 [GitHub](https://github.com/stu-eonho) · [LinkedIn](https://www.linkedin.com/in/eonho)
+[eonho@korea.ac.kr](mailto:eonho@korea.ac.kr)
 
 ---
 
-### About this repository
-
-This is the source of the site above: an Astro 7 static site, bilingual by URL, written in
-MDX and deployed to GitHub Pages by GitHub Actions. No server, no database — every page is
-generated at build time from the files here. Notes on running and maintaining it are in
-[`docs/`](docs/README.md) (in Korean).
-
-The posts and images are mine and the code carries no open-source licence, so please ask
-before reusing either. Papers discussed here belong to their authors — only links to the
-originals are stored, never the PDFs.
+© 2026 Eonho Lee. All rights reserved.

@@ -387,6 +387,15 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
 
 브랜치·원격을 관리자가 바꾸지 않는다. 현재 업스트림으로만 보낸다.
 
+**예외 — README 봇 커밋 자동 rebase (2026-10-27).** `.github/workflows/readme.yml`이 배포 뒤
+`README.md`·`README.ko.md`를 커밋하므로 글을 올릴 때마다 원격이 앞서게 된다. 푸시는 먼저
+`git fetch`하고, 원격 쪽 변경(`HEAD...upstream`)이 **전부 그 두 파일**이며 두 파일에 커밋 안 된
+로컬 변경이 없을 때만 `git rebase --autostash <upstream>`로 합친 뒤 위 규칙을 그대로 적용한다.
+rebase가 충돌하면(로컬 커밋도 README를 고친 경우) `rebase --abort`로 되돌리고 거절한다.
+`GET /git/status`의 `autoSync`가 이 판정을 미리 알려 화면이 푸시를 막지 않게 한다(판정은 fetch 없이
+로컬 refs 기준). 격리 저장소 22건 검증: 자동 합침·추적/미추적 로컬 변경 보존·stash 잔여 없음,
+README 외 변경/섞인 변경/README 로컬 변경 거절, 충돌 시 HEAD·원격 무변경, 업스트림 없음, 합친 뒤 보낼 것 없음, 평상 푸시.
+
 ### 푸시 확인 창
 
 푸시는 곧 공개 배포이므로 확인 없이 실행하지 않는다. 기본 포커스는 취소다.

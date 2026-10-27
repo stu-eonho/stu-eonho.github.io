@@ -17,6 +17,20 @@
 
 타입 오류가 있거나 내부 링크가 깨지면 build 잡이 실패하고 **배포는 일어나지 않습니다.**
 
+## README 최근 글 자동 갱신
+
+배포가 성공하면 `.github/workflows/readme.yml`이 **실제 사이트의 RSS**를 읽어 `README.md`(`/en/rss.xml`)와
+`README.ko.md`(`/rss.xml`)의 "최근 글" 표를 최근 5건으로 다시 쓰고, 바뀐 것이 있으면 봇이 `main`에 커밋합니다.
+
+- 바꾸는 범위는 README의 `<!-- recent-posts:start -->` ~ `<!-- recent-posts:end -->` 사이뿐입니다.
+  그 사이는 손으로 고쳐도 다음 갱신에서 덮어써집니다. 표식을 지우면 갱신이 실패합니다(표는 그대로 남습니다).
+- 봇 커밋은 배포를 다시 일으키지 않습니다(`GITHUB_TOKEN`으로 만든 커밋은 다른 워크플로를 깨우지 않습니다).
+- 봇 커밋 때문에 원격이 로컬보다 앞서게 됩니다. **관리자 콘솔은 이것을 푸시할 때 자동으로 합칩니다.**
+  터미널에서 푸시한다면 먼저 `git pull --rebase`를 하세요.
+- 표에는 피드에 있는 날짜·제목·카테고리만 나옵니다. 논문 저자·학회는 피드에 없어 표에도 없습니다.
+- 손으로 돌리려면 Actions 탭에서 "Update README"를 실행하거나, 로컬에서
+  `node scripts/update-readme.mjs`(배포된 사이트 기준) 또는 `node scripts/update-readme.mjs dist`(로컬 빌드 기준)를 실행합니다.
+
 ## 되돌리기
 
 1. 문제가 된 커밋을 `git revert`하고 push합니다 → 자동 재배포. 이력이 남아 추적할 수 있습니다.

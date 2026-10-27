@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-labelledby="title">
+  <title id="title">Pit Stop for Ideas — Paper Review · Project · Notes</title>
+  <!-- README 상단 배너(다크). 색은 src/styles/global.css의 다크 토큰과 같다.
+       GitHub는 SVG를 <img>로 띄우므로 웹폰트가 실리지 않는다 — 시스템 글꼴 스택을 쓴다. -->
+  <style>
+    .display { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+  </style>
+  <rect width="1280" height="320" rx="20" fill="#000000" stroke="#ffffff" stroke-opacity="0.12"/>
+
+  <!-- 파비콘과 같은 표식 -->
+  <g transform="translate(80 72) scale(1.75)">
+    <rect width="32" height="32" rx="8" fill="#0071e3"/>
+    <path d="M9 10h14M9 16h14M9 22h9" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <text class="display" x="78" y="198" font-size="60" font-weight="600" letter-spacing="-0.6" fill="#f5f5f7">Pit Stop for Ideas</text>
+  <text class="display" x="80" y="240" font-size="22" letter-spacing="-0.2" fill="#a1a1a6">Paper Review · Project · Notes</text>
+  <text class="display" x="80" y="272" font-size="17" letter-spacing="-0.2" fill="#2997ff">stu-eonho.github.io</text>
+
+  <!-- 오른쪽: 글 카드 두 장을 겹친 그림. 카드는 사이트의 다크 surface + hairline -->
+  <g transform="translate(884 56)">
+    <rect x="28" y="20" width="300" height="196" rx="16" fill="#1d1d1f" stroke="#ffffff" stroke-opacity="0.08"/>
+    <rect width="300" height="196" rx="16" fill="#1d1d1f" stroke="#ffffff" stroke-opacity="0.12"/>
+    <rect x="28" y="30" width="72" height="18" rx="9" fill="#2997ff" fill-opacity="0.18"/>
+    <rect x="28" y="66" width="208" height="14" rx="7" fill="#f5f5f7"/>
+    <rect x="28" y="96" width="244" height="10" rx="5" fill="#86868b" fill-opacity="0.45"/>
+    <rect x="28" y="116" width="220" height="10" rx="5" fill="#86868b" fill-opacity="0.45"/>
+    <rect x="28" y="136" width="150" height="10" rx="5" fill="#86868b" fill-opacity="0.45"/>
+    <rect x="28" y="166" width="96" height="10" rx="5" fill="#2997ff" fill-opacity="0.6"/>
+  </g>
+</svg>
