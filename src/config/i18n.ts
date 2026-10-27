@@ -252,8 +252,6 @@ const ko = {
     emptyArchiveTitle: '아직 작성된 글이 없습니다',
     emptyArchiveHint: 'src/content/posts/ 에 Markdown 파일을 추가하면 여기에 쌓입니다.',
     emptyCategoryTitle: '이 카테고리에는 아직 글이 없습니다',
-    emptyCategoryHint: (id: string) =>
-      `src/content/posts/${id}/ 에 Markdown 파일을 추가하면 이 목록에 나타납니다.`,
     browseOther: '다른 카테고리 둘러보기',
   },
 
@@ -457,8 +455,6 @@ const en: UIStrings = {
     emptyArchiveTitle: 'No posts yet',
     emptyArchiveHint: 'Posts appear here once you add Markdown files under src/content/posts/.',
     emptyCategoryTitle: 'Nothing in this category yet',
-    emptyCategoryHint: (id: string) =>
-      `Add a Markdown file under src/content/posts/${id}/ and it will show up in this list.`,
     browseOther: 'Browse other categories',
   },
 

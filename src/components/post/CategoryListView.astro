@@ -37,7 +37,6 @@ const { lang, t, href } = i18n(Astro.url);
     <EmptyState
       icon={category.icon}
       title={t.list.emptyCategoryTitle}
-      hint={t.list.emptyCategoryHint(category.id)}
       ctaLabel={t.list.browseOther}
       ctaHref={href('/archive')}
     />
