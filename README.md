@@ -31,6 +31,12 @@ Read this in [한국어](README.ko.md).
 - **Korea University**, BS in Computer Science and Engineering — since March 2026
 - **AIKU**, Korea University's Deep Learning Society — Junior, since July 2026
 
+## Awards
+
+- **2026 Yonsei–Korea AI Hackathon** · 5th Place — Yonsei & Korea University Student Councils, October 2026
+- **AI Urban & Regional Innovation Idea Competition** · Top Excellence Award (HUG President's Award) — Ministry of Land, Infrastructure and Transport et al., September 2026
+- **13th AIKUTHON** · 3rd Place — AIKU, August 2026
+
 ## Recent writing
 
 <!-- recent-posts:start -->
