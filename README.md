@@ -1,494 +1,61 @@
-# Study Log
+# Eonho Lee
 
-읽은 논문(Paper Review)과 진행한 프로젝트(Project), 공부 노트(Notes)를 기록하는 개인 정적 블로그입니다.
-글은 웹 에디터가 아니라 이 리포지토리에 Markdown 파일을 커밋해 씁니다. `main`에 push하면 GitHub Actions가 빌드해 GitHub Pages로 배포합니다.
+Undergraduate in Computer Science and Engineering at **Korea University**.
+I read papers, build things, and keep notes on both — in public, so that what I learn
+leaves a trace I can go back to.
 
-한국어(`/`)와 영어(`/en/`) 두 벌로 빌드됩니다. 해외 포트폴리오로 쓸 수 있게 영어 페이지가 실제 URL을 갖습니다.
+**Study log → [Pit Stop for Ideas](https://stu-eonho.github.io)**
+([한국어](https://stu-eonho.github.io/) · [English](https://stu-eonho.github.io/en))
 
-Astro 7 · MDX · Tailwind CSS 4 · Pagefind · 서버 없음 · 데이터베이스 없음.
+Read this in [한국어](README.ko.md).
 
-배포 주소: <https://stu-eonho.github.io>
+## Interests
 
----
+**World Model** · **Robotics** · **Computer Vision**
 
-## 1. 처음 시작하기
+## Now
 
-```bash
-npm install
-npm run dev          # http://localhost:4321
-```
+- **Korea University**, BS in Computer Science and Engineering — since March 2026
+- **AIKU**, Korea University's Deep Learning Society — Junior, since July 2026
 
-Node 22.12.0 이상이 필요합니다(`.nvmrc`에 `22`가 기록되어 있습니다).
+## Recent writing
 
-| 명령                  | 하는 일                                                |
-| --------------------- | ------------------------------------------------------ |
-| `npm run dev`         | 개발 서버. draft 글이 보이고, 검색 인덱스는 없습니다   |
-| `npm run admin`       | 개발 서버 + 관리자 콘솔(`/admin`) 열기 — §2 참조       |
-| `npm run build`       | `astro check`(타입 검사) 후 정적 빌드 → `dist/`        |
-| `npm run preview`     | 빌드 결과를 그대로 서빙합니다                          |
-| `npm run check-links` | `dist`의 내부 링크가 실제 파일로 해석되는지 검사합니다 |
-| `npm run format`      | Prettier로 전체 포맷                                   |
+| Date       | Post                                                                                                                 | Category     |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 2026-09-17 | [Retrieval-Augmented Generation (RAG)](https://stu-eonho.github.io/en/paper-review/rag) — Lewis et al., NeurIPS 2020 | Paper Review |
+| 2026-09-01 | [제13회 AIKUTHON](https://stu-eonho.github.io/en/notes/13-aikuthon) — a datathon hosted by AIKU                      | Notes        |
+| 2026-08-26 | [World Models](https://stu-eonho.github.io/en/paper-review/world-models) — Ha & Schmidhuber, NeurIPS 2018            | Paper Review |
+| 2026-08-25 | [Hello](https://stu-eonho.github.io/en/notes/hello)                                                                  | Notes        |
 
-> **검색과 draft 제외 동작은 개발 서버에서 확인할 수 없습니다.**
-> 반드시 `npm run build && npm run preview`로 확인하세요. Pagefind 인덱스는 빌드 후에 생성됩니다.
+Everything is browsable by [category](https://stu-eonho.github.io/en/paper-review), by
+[tag](https://stu-eonho.github.io/en/tags), by [date](https://stu-eonho.github.io/en/archive),
+or by [full-text search](https://stu-eonho.github.io/en/search) —
+and there is an [RSS feed](https://stu-eonho.github.io/en/rss.xml).
 
----
+## Coursework
 
-## 2. 관리자 콘솔 (로컬 전용)
+| Term           | Courses                                                                               |
+| -------------- | ------------------------------------------------------------------------------------- |
+| Year 1, Fall   | Mathematics For Computer Science II · Theory of Computation · Artificial Intelligence |
+| Year 1, Spring | Mathematics For Computer Science I · Computer Programming I                           |
 
-```bash
-npm run admin        # astro dev + 브라우저에서 /admin 열기
-```
+Languages I work in: **Python**, **C**.
 
-글 쓰기, 프로필·설정 편집, 태그 정리, 이미지 업로드를 브라우저 폼에서 합니다.
-저장하면 이 리포지토리의 **실제 소스 파일**이 바뀝니다 — 결과는 곧 git 워킹 트리의 변경이며,
-커밋·푸시는 지금처럼 손으로 합니다.
+## Contact
 
-> **`astro dev`에서만 열립니다.** 배포된 사이트의 `/admin`은 404입니다.
-> 관리자 코드는 프로덕션 빌드 산출물(`dist/`)에 한 바이트도 들어가지 않으며,
-> 빌드 훅이 그것을 검사해 유출이 있으면 빌드를 실패시킵니다.
-
-| 화면                | 하는 일                                                             |
-| ------------------- | ------------------------------------------------------------------- |
-| `/admin`            | 글·초안·번역 누락·스키마 오류 수, 프로필 미기입 항목, **커밋·푸시** |
-| `/admin/posts`      | 글 목록·검색·필터, 새 글, EN 번역본 생성, 삭제                      |
-| `/admin/posts/edit` | 프론트매터 폼 + MDX 본문 + 실시간 프리뷰(KaTeX·Shiki)               |
-| `/admin/profile`    | 이름·학적·경력·스킬·관심 분야·수강 과목·링크 (ko/en)                          |
-| `/admin/settings`   | 사이트 설정과 카테고리                                              |
-| `/admin/strings`    | `src/config/i18n.ts`의 UI 문자열 값                                 |
-| `/admin/tags`       | 태그 사용 현황·이름 변경·병합·삭제                                  |
-| `/admin/assets`     | `src/assets/` 이미지 업로드·삭제, 프로필 사진 교체                  |
-
-### 알아 둘 것
-
-- **저장 전에 실제 콘텐츠 스키마로 검증합니다.** `paper-review` 글에 `paper` 블록이 없거나
-  `cover`만 있고 `coverAlt`가 없으면 브라우저에서 바로 막힙니다. 빌드까지 가지 않습니다.
-- **슬러그를 바꾸면 번역본 파일 이름도 함께 바뀝니다.** 한쪽만 바뀌면 짝짓기가 끊겨
-  번역본이 독립된 글로 노출되기 때문입니다. 저장 전에 확인 창이 뜹니다.
-- **에디터로 같은 파일을 직접 고쳤다면** 관리자 저장이 막히고 좌우 비교 화면이 뜹니다
-  (기본 선택은 "취소"입니다). 어느 쪽 변경도 조용히 사라지지 않습니다.
-- **삭제는 즉시 파일을 지웁니다.** 되돌리는 수단은 git입니다 — 커밋되지 않은 변경은 복구할 수 없습니다.
-- **UI 문자열의 키는 추가·삭제할 수 없습니다.** `ko`와 `en`의 키가 갈리면 `astro check`가
-  실패합니다. 새 키가 필요하면 `src/config/i18n.ts`를 직접 편집하세요.
-- **새 카테고리는 dev 서버를 재시작해야 라우트에 반영됩니다.** 저장 시 `src/content/posts/<id>/`
-  폴더는 바로 만들어집니다.
-- **글 내용은 저장하면 바로 사이트에 반영됩니다.** 새로고침만 하면 됩니다.
-- 관리자 화면은 한국어 고정이며, 사이트에는 `/admin`으로 가는 링크가 없습니다.
-
-> **dev 서버를 완전히 껐다 켜야 하는 경우**
->
-> `astro dev stop` 후 `npm run dev`. 파일을 저장했을 때 일어나는 자동 재시작은 같은
-> 프로세스 안에서 일어나므로 아래 두 가지를 갱신하지 못합니다.
->
-> | 무엇을 고쳤을 때 | 왜 |
-> | --- | --- |
-> | `admin/server/**` (관리자 서버 코드) | Node가 이 모듈들을 프로세스 단위로 캐시합니다 |
-> | `src/content/schema.ts`, `src/content.config.ts` (프론트매터 스키마) | 콘텐츠 컬렉션이 기동 시점의 스키마를 붙들고 있습니다 |
->
-> **증상이 헷갈립니다.** "안 바뀜"이 아니라 **반쪽만 바뀝니다.** `src/config/*`는 즉시
-> 갱신되는데 위 두 가지는 옛 코드로 남아, 새 규칙과 옛 규칙이 섞여 돌아갑니다.
-> 저장한 값이 화면에 반영되지 않거나 이상한 값이 파일에 남으면 먼저 껐다 켜 보세요.
-
-### 커밋과 푸시
-
-대시보드에서 바로 할 수 있습니다. 바뀐 파일을 골라 메시지를 쓰고 **커밋**, 그다음 **푸시**하면
-GitHub Actions가 빌드해 사이트에 반영합니다.
-
-- **푸시 전에 확인 창이 뜹니다.** 브랜치·원격·보낼 커밋 수를 보여 주고, 초안 글이 있으면
-  경고를 하나 더 띄웁니다 — 초안은 사이트에 안 나오지만 **파일은 공개 리포지토리에 올라갑니다.**
-- 강제 푸시(`--force`)는 없습니다. 원격이 앞서 있으면 푸시를 막고 `git pull`을 안내합니다.
-- 커밋 메시지는 셸을 거치지 않고 git에 그대로 전달됩니다. 따옴표나 특수문자를 자유롭게 써도
-  됩니다.
-- 터미널에서 직접 하고 싶으면 카드 아래 "터미널에서 직접 하기"에 명령어가 있습니다.
-
-### 접근 제어
-
-인증이 없습니다. **"로컬 루프백에서만 접근 가능"이 보안 경계**이며, 세 겹으로 막습니다.
-
-1. 요청 출발지가 `127.0.0.1`·`::1`이 아니면 거절
-2. 변경 요청의 `Origin`이 dev 서버 자신의 오리진이 아니면 거절 (`Origin`이 없어도 거절)
-3. 변경 요청은 `/session`에서만 받을 수 있는 토큰을 요구
-
-이것이 필요한 이유: dev 서버를 켠 채 아무 웹사이트나 방문하면 그 사이트의 스크립트가
-`http://localhost:4321`로 요청을 보낼 수 있고, 응답은 못 읽어도 **파일 쓰기는 이미 일어나기**
-때문입니다.
-
-| 환경변수               | 하는 일                                                                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `ADMIN_DISABLED=1`     | dev 서버에서도 관리자를 등록하지 않습니다. `/admin`이 404가 됩니다                                                      |
-| `ADMIN_ALLOW_REMOTE=1` | 루프백 밖에서의 접근을 허용합니다. **같은 네트워크의 누구나 이 리포지토리를 수정하고 공개 사이트에 발행할 수 있습니다** |
-
-`ADMIN_ALLOW_REMOTE`를 켜면 관리자 화면 최상단에 빨간 경고 배너가 상시 표시됩니다.
-`astro dev --host`로 태블릿에서 글을 쓸 때만, 신뢰하는 네트워크에서만 쓰세요.
+📍 Gyeonggi-do, South Korea
+✉️ [eonho@korea.ac.kr](mailto:eonho@korea.ac.kr)
+🔗 [GitHub](https://github.com/stu-eonho) · [LinkedIn](https://www.linkedin.com/in/eonho)
 
 ---
 
-## 3. 프로필 채우기
-
-홈은 **CV 한 장 + 최근 글** 두 덩어리입니다. 프로필 카드 안에 사진·이름·소개·연락처·링크와
-학적 / 경력 / 스킬 / 관심 분야 / 수강 과목이 전부 모여 있고, 그 아래에 최근 글 그리드가 옵니다.
-
-카드의 모든 내용은 `src/config/profile.ts` 한 파일에서 옵니다.
-꺾쇠(`<...>`)로 감싼 값이 아직 채우지 않은 자리이며, 화면에도 그대로 보입니다 —
-무엇을 채워야 하는지 바로 알 수 있고, 값을 지우면 그 요소가 사라집니다.
-
-1. **`src/config/profile.ts`를 열고 꺾쇠로 감싼 값을 실제 정보로 바꿉니다.**
-   공개하고 싶지 않은 항목은 값을 지우거나 줄 전체를 삭제하세요. 각 필드 위 주석에
-   "비웠을 때 화면이 어떻게 되는지"가 적혀 있습니다.
-   글자가 들어가는 필드는 **한 언어로 쓰거나 두 언어로 나눠 쓸 수 있습니다.**
-
-   ```ts
-   school: 'KAIST',                                        // 두 화면에서 그대로
-   school: { ko: '서울대학교', en: 'Seoul National University' },  // 언어별로 다르게
-   ```
-
-   고유명사처럼 번역할 필요가 없는 값은 문자열 하나로 두세요.
-
-2. **프로필 사진을 `src/assets/profile.jpg`에 넣습니다.**
-   정사각형 640×640 이상을 권장하며 원형으로 잘립니다. `.jpeg` / `.png` / `.webp`도 자동으로 인식합니다.
-   파일이 없으면 이름 이니셜 원형 플레이스홀더가 대신 나옵니다.
-3. **`photoAlt`를 사진 설명으로 바꿉니다.** 스크린리더가 읽는 문구입니다.
-4. **CV를 게시한다면** `public/cv.pdf`에 파일을 넣고 `cvUrl: '/cv.pdf'`로 둡니다.
-   게시하지 않으면 `cvUrl` 줄과 파일을 함께 지웁니다.
-5. `npm run dev`로 홈 화면을 확인합니다.
-6. 커밋 후 push하면 자동 배포됩니다.
-
-> **사진을 커밋하기 전에 배경에 개인정보(주소, 사원증, 문서)가 찍히지 않았는지 확인하세요.**
-> 한 번 커밋된 파일은 이후 삭제해도 Git 이력에 남습니다.
-
-빌드할 때 미기입 항목이 남아 있으면 콘솔에 경고 한 줄이 나옵니다. **경고일 뿐 빌드는 성공합니다** —
-사이트를 먼저 띄워 보고 나중에 채워도 됩니다.
-
-### 경력 쓰기
-
-`career` 배열에 최신 항목이 앞에 오도록 넣습니다. 재직 중이면 `endDate: null`로 두면
-화면에 "현재"로 표시되고, 카드 상단 요약에도 현직으로 함께 나옵니다.
-
-```ts
-career: [
-  {
-    company: { ko: '○○연구소', en: 'OO Research Institute' },
-    role: { ko: '연구 인턴', en: 'Research Intern' },
-    team: 'NLP',               // 두 언어 공통이면 문자열 하나로. 생략 가능
-    employment: 'Intern',      // Full-time | Intern | Contract | Freelance | Other, 생략 가능
-    startDate: '2025-06',
-    endDate: null,             // 재직 중
-    description: {             // 생략 가능
-      ko: '한국어 요약 모델 평가 파이프라인 구축',
-      en: 'Built an evaluation pipeline for Korean summarization models',
-    },
-  },
-],
-```
-
-`Full-time` / `Intern` 같은 구분값과 `학사` / `BS` 같은 학위 표기는 화면 언어에 맞춰 자동으로 번역됩니다 —
-직접 쓰지 않습니다.
-
-경력이 없으면 `career: []`로 두세요. 섹션 전체가 사라집니다.
-
-### 수강 과목 쓰기
-
-`courses`는 관심 분야 바로 아래에 작은 글씨로 한 줄에 이어서 나옵니다(넘치면 다음 줄로 감깁니다).
-관리자 콘솔(`/admin/profile`)의 "수강 과목" 카드에서도 편집할 수 있습니다.
-같은 학기 과목은 한 줄로 묶이고 학기는 줄 앞에 한 번만 나오며, 최근 학기가 위에 옵니다.
-관련 글을 지정한 과목은 과목명 자체가 그 글로 가는 링크가 되고, 제공처·성적은 과목명 뒤 괄호 안에 나옵니다.
-
-```ts
-courses: [
-  {
-    name: { ko: '선형대수', en: 'Linear Algebra' },
-    kind: 'school',                 // school(학교 수업) | self(독학)
-    term: '1-1',                    // 학년-학기 1-1 | 1-2 | 1-summer | 1-winter, 또는 연도-학기 2026-1. 생략 가능
-    grade: 'A+',                    // 생략하면 성적을 표시하지 않습니다
-  },
-  {
-    name: 'Deep Learning for Computer Vision',
-    kind: 'self',
-    provider: 'Stanford CS231n',    // 독학 강의의 제공처. 생략 가능
-    post: 'paper-review/world-models', // 관련 글 "카테고리/slug". 생략 가능
-  },
-],
-```
-
-- 학년-학기 `1-1`은 한국어 화면에 `1-1` 그대로, 영어 화면에는 `Year 1, Spring`으로 나옵니다. 연도-학기 `2026-1`은 `2026년 1학기` / `Spring 2026`입니다.
-- 학기를 비운 과목은 맨 아래 "기타" 줄로 모입니다. 학기를 하나도 적지 않았으면 학기 칸 없이 과목만 나옵니다.
-- 독학 과목은 괄호 안에 제공처가, 제공처가 없으면 "독학"이 붙습니다.
-- `post`로 지정한 글을 공개 글에서 찾지 못하면(초안·삭제·오타) 링크 없이 과목만 나오고 빌드 로그에 경고가 남습니다.
-
-### 외부 링크 (`links`)
-
-`url`은 스킴을 빼고 적어도 됩니다 — 표시 직전과 관리자 저장 시점에 자동으로 붙습니다.
-
-| 적은 값 | 실제 링크 |
-| ------- | --------- |
-| `eonho@korea.ac.kr` (종류 `email`) | `mailto:eonho@korea.ac.kr` |
-| `github.com/id` | `https://github.com/id` |
-| `https://…` · `mailto:…` | 그대로 |
-| `/about` · `#top` | 그대로 (사이트 안쪽 링크로 봅니다) |
-
-스킴 없는 주소를 그대로 두면 브라우저가 **사이트 내부 경로**로 읽어
-`https://stu-eonho.github.io/eonho@korea.ac.kr` 같은 404 링크가 됩니다. 이 보정이 그것을 막습니다.
-
-### 비웠을 때 어떻게 되나
-
-| 비운 항목                                      | 화면                                                  |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| `email`                                        | 소셜 아이콘 행에서 이메일 아이콘만 사라집니다         |
-| `links`                                        | 소셜 아이콘 행 전체가 사라집니다                      |
-| `cvUrl`                                        | CV 버튼이 사라집니다                                  |
-| 다섯 섹션 모두                                 | CV 본문 블록 자체가 사라지고 신원 + 소개문만 남습니다 |
-| `education`                                    | 학적 섹션 전체와 카드 상단의 소속 한 줄이 사라집니다  |
-| `career`                                       | 경력 섹션 전체와 카드 상단의 현직 표기가 사라집니다   |
-| `skillGroups`                                  | 스킬 섹션 전체가 사라집니다                           |
-| `interests`                                    | 관심 분야 섹션 전체가 사라집니다                      |
-| `courses`                                      | 수강 과목 섹션 전체가 사라집니다                      |
-| `term`, `provider`, `grade`, `post`            | 해당 표기(관련 글은 링크)만 생략됩니다                |
-| 사진 미교체                                    | 이름 이니셜 원형 플레이스홀더로 대체됩니다            |
-| `nameEn`, `location`, `lab`, `advisor`, `note` | 해당 줄만 생략됩니다                                  |
-
-`nameEn`(영문 병기)은 한국어 화면에서만 이름 옆에 붙습니다. 영어 화면에서는 이름 자체가 이미 영문이므로 생략됩니다.
-
----
-
-## 4. 한국어 / 영어
-
-사이트는 한 번 빌드할 때 두 벌이 나옵니다.
-
-| 화면               | 한국어                         | 영어                                    |
-| ------------------ | ------------------------------ | --------------------------------------- |
-| 홈                 | `/`                            | `/en`                                   |
-| 카테고리           | `/paper-review`                | `/en/paper-review`                      |
-| 글 상세            | `/notes/my-slug`               | `/en/notes/my-slug`                     |
-| 아카이브·태그·검색 | `/archive`, `/tags`, `/search` | `/en/archive`, `/en/tags`, `/en/search` |
-| RSS                | `/rss.xml`                     | `/en/rss.xml`                           |
-
-전환은 헤더 오른쪽, 검색과 다크 모드 토글 옆의 **`EN` / `KO`** 버튼입니다.
-지금 보고 있는 화면의 반대 언어 URL로 이동하는 **링크**이며 JavaScript를 쓰지 않습니다 —
-그래서 깜빡임이 없고, JS를 꺼도 동작하고, 영어 URL을 공유하면 상대도 영어로 봅니다.
-
-`<link rel="alternate" hreflang>`과 사이트맵이 두 URL을 짝으로 묶어 주므로
-검색엔진이 영어 페이지를 따로 색인합니다. 검색(Pagefind)도 언어별 인덱스가 분리되어
-`/search`는 한국어 글을, `/en/search`는 영어 글을 찾습니다.
-
-### 글 번역하기
-
-**UI와 프로필은 항상 두 언어로 나옵니다. 글 본문은 번역본을 쓴 것만 영어가 됩니다.**
-
-번역본을 만들려면 원문 옆에 `.en`을 끼운 파일을 두고 `lang: en`을 넣습니다.
-
-```
-src/content/posts/notes/
-  intl-date-format.md       ← 원문 (lang 생략 = ko)
-  intl-date-format.en.md    ← 번역본 (lang: en)
-```
-
-```yaml
----
-slug: intl-date-format # 원문과 **똑같이** 둡니다 — 이 값으로 두 글이 묶입니다
-lang: en
-title: Formatting dates with Intl.DateTimeFormat
-description: ...
-category: notes # 원문과 같아야 합니다
-date: 2026-08-21
-tags: [javascript, i18n]
----
-```
-
-`slug`와 `category`가 같으면 같은 글의 번역본으로 묶이고, `/en/notes/intl-date-format`에
-영어판이 실립니다. `slug`가 다르면 **별개의 글 두 편**이 됩니다.
-
-번역본이 없는 글은 `/en/`에서 원문이 그대로 나오고, 본문 위에 안내 배너가 붙습니다.
-이런 페이지는 canonical이 원문 URL을 가리킵니다 — 같은 본문이 두 URL에 있을 때
-검색엔진이 중복으로 보고 양쪽 평가를 함께 깎는 것을 막기 위해서입니다.
-
-같은 `slug` + `category` + `lang` 조합이 두 번 나오면 **빌드가 실패합니다.**
-어느 파일이 이길지 알 수 없는 상태로 배포되지 않게 하기 위한 것입니다.
-
-### UI 문구 고치기
-
-화면에 나오는 모든 문구는 `src/config/i18n.ts`의 `UI` 사전 한 곳에 있습니다.
-컴포넌트에 한국어를 직접 쓰지 마세요 — 영어 빌드에 한국어가 섞여 나갑니다.
-
-영어 사전은 한국어 사전의 타입(`typeof ko`)을 그대로 만족해야 하므로,
-**한쪽에만 키를 추가하면 `astro check`가 실패합니다.** 번역 누락을 잡는 장치는 이것뿐입니다.
-
-### 언어 추가하기
-
-`src/config/i18n.ts`의 `LOCALES`에 코드를 넣고 `LANG_META`·`UI`에 항목을 추가한 뒤,
-`src/pages/en/` 아래 파일들을 그대로 복사한 폴더를 만듭니다. 페이지 파일은 전부
-`src/components/views/`의 뷰 하나를 부르는 한 줄짜리라 복사만 하면 됩니다.
-
----
-
-## 5. 새 글 쓰기
-
-1. `src/content/posts/_template.paper-review.mdx` 또는 `_template.project.mdx`를 복사합니다.
-   (밑줄로 시작하는 파일은 컬렉션에서 제외되므로 템플릿 자체는 사이트에 나오지 않습니다.)
-2. `src/content/posts/<카테고리>/<슬러그>.mdx`로 저장합니다.
-3. 프론트매터를 채웁니다. `draft: true`인 동안에는 개발 서버에서만 보입니다.
-4. 다 쓰면 `draft` 줄을 지우거나 `false`로 바꾸고 커밋합니다.
-
-### 프론트매터
-
-| 필드                 | 필수 | 설명                                                                    |
-| -------------------- | ---- | ----------------------------------------------------------------------- |
-| `slug`               | ✔   | URL 세그먼트. 소문자·숫자·하이픈만. **슬래시를 쓸 수 없습니다**         |
-| `lang`               |      | `ko`(기본) / `en`. 번역본을 쓸 때만 지정합니다 → [3장](#3-한국어--영어) |
-| `title`              | ✔   | 120자 이내                                                              |
-| `description`        |      | 200자 이내. 카드·검색·RSS·OG에 공용. 비우면 카드·글 머리의 설명 줄이 빠지고 OG·RSS는 사이트 기본 설명을 씁니다 |
-| `category`           | ✔   | `paper-review` / `project` / `notes`                                    |
-| `date`               | ✔   | 최초 게시일. 목록 정렬과 아카이브 그룹 기준                             |
-| `updated`            |      | 수정일. 있으면 상세 헤더에 "수정: ..."이 붙습니다                       |
-| `tags`               |      | 배열. 항목당 24자 이내                                                  |
-| `draft`              |      | `true`면 프로덕션 빌드에서 완전히 제외됩니다                            |
-| `cover` / `coverAlt` |      | 커버 이미지와 설명. `cover`가 있으면 `coverAlt`는 필수입니다            |
-| `math`               |      | 보통 비워 둡니다 — 본문에 수식이 있으면 자동으로 켜집니다. 수동 강제용 |
-| `toc`                |      | 기본 `true`. `false`면 목차 없이 본문을 가운데 정렬합니다               |
-| `paper`              | ▲    | `category: paper-review`면 **필수**                                     |
-| `project`            | ▲    | `category: project`면 **필수**                                          |
-
-`paper` 블록이 있는 글은 **목록 카드 제목 아래에 원 논문 인용이 한 줄로 붙습니다** —
-`저자들 · 학회 연도`(예: `David Ha, Jürgen Schmidhuber · NeurIPS 2018`). 저자가 3명을 넘으면
-앞 3명 + `외 N명`으로 줄고, 글 상세의 원 논문 패널에서는 4명까지 펼쳐집니다.
-`description`을 따로 쓰면 인용 줄 **아래**에 함께 나옵니다.
-
-프론트매터가 스키마에 어긋나면 **빌드가 실패합니다.** 경고 후 넘어가지 않습니다 —
-잘못된 프론트매터가 조용히 배포되면 화면이 깨진 채로 공개되기 때문입니다.
-
-### 이미지 크기와 정렬
-
-본문 이미지는 기본적으로 원본 크기로 나오며 본문 폭(720px)을 넘지 않습니다.
-대체 텍스트 뒤에 `|옵션`을 붙여 너비와 정렬을 정합니다.
-
-```md
-![스크린샷](../../../assets/shot.png) 원본 크기, 글 흐름 그대로
-![스크린샷|400](../../../assets/shot.png) 최대 400px
-![스크린샷|center](../../../assets/shot.png) 가운데 정렬
-![스크린샷|400|center](../../../assets/shot.png) 둘 다 (순서는 상관없습니다)
-```
-
-정렬은 `left` · `center` · `right` 세 가지입니다.
-
-- 표시 크기만 바뀌고 **원본 파일은 그대로**입니다.
-- 좁은 화면에서는 지정한 값보다 작게, 화면 폭에 맞춰 줄어듭니다.
-- 정렬은 **이미지 상자의 위치만** 옮깁니다. 글이 이미지를 감싸고 흐르지는 않습니다.
-- 관리자 편집기의 "이미지 삽입" 창에 **너비**와 **정렬** 칸이 있습니다. 비우면 기본값입니다.
-- 맨 뒤 조각이 숫자나 정렬 키워드일 때만 옵션으로 읽습니다 — `![A | B](…)` 같은 문장은
-  그대로 둡니다.
-
-### 수식과 코드
-
-- 수식: `$인라인$`, `$$블록$$`. **`math: true`를 직접 켤 필요는 없습니다** — 본문에 수식이 있으면
-  빌드가 알아서 KaTeX 스타일을 싣습니다. 프론트매터의 `math`는 수동 강제용으로만 남아 있습니다
-- 코드: 백틱 세 개 + 언어 이름. 라이트/다크 듀얼 테마로 하이라이팅되고 복사 버튼이 붙습니다
-- MDX에서는 `src/components/`의 컴포넌트를 직접 import 해 쓸 수 있습니다
-
----
-
-## 6. 카테고리 추가하기
-
-**페이지 파일을 만들지 않습니다.** 두 단계로 끝납니다.
-
-1. `src/config/categories.ts`의 `CATEGORIES` 배열에 항목을 추가합니다.
-
-   ```ts
-   {
-     id: 'seminar',
-     label: 'Seminar',        // 상단 바·배지 표기. 두 언어 공통입니다
-     labelKo: '세미나',        // 한국어 목록 부제에 쓰입니다
-     description: {           // 언어별로 반드시 둘 다 씁니다
-       ko: '세미나에서 들은 내용을 정리합니다.',
-       en: 'Notes from the seminars I attended.',
-     },
-     icon: 'lucide:presentation',
-     order: 4,
-     metaPanel: 'none',   // paper | project | none
-   }
-   ```
-
-2. `src/content/posts/seminar/` 폴더를 만듭니다.
-
-내비게이션 항목, 목록 페이지, 페이지네이션, 글 상세, 아카이브, RSS가 **한국어·영어 양쪽 모두** 자동으로 따라옵니다.
-`metaPanel`을 `paper` 또는 `project`로 두면 해당 메타 블록이 프론트매터 필수가 됩니다.
-
-카테고리를 지우려면 배열에서 항목을 빼고 해당 폴더의 글을 옮기거나 지웁니다.
-
----
-
-## 7. 사이트 설정
-
-| 파일                       | 담는 것                                                                |
-| -------------------------- | ---------------------------------------------------------------------- |
-| `src/config/site.ts`       | 사이트 제목·설명·내비 순서·페이지 크기. **제목은 여기서만 정의합니다** |
-| `src/config/i18n.ts`       | 언어 정의와 화면 문구 사전. **UI 문자열은 여기서만 정의합니다**        |
-| `src/config/categories.ts` | 카테고리 단일 정의 지점                                                |
-| `src/config/profile.ts`    | 프로필                                                                 |
-| `astro.config.mjs`         | `site` 절대 URL. 다른 호스트로 옮길 때 바꿀 값은 이것 하나뿐입니다     |
-| `src/styles/global.css`    | 디자인 토큰 (`[verified]` / `[local extension]` 출처 주석 포함)        |
-
-### 환경변수 (선택)
-
-| 이름                      | 설명                                                                          |
-| ------------------------- | ----------------------------------------------------------------------------- |
-| `PUBLIC_SITE_URL`         | canonical/OG URL을 덮어씁니다. 프리뷰 배포에서만 씁니다                       |
-| `PUBLIC_GOATCOUNTER_CODE` | GoatCounter 사이트 코드. 없으면 분석 스크립트도 푸터 고지도 출력하지 않습니다 |
-
-> **정적 빌드이므로 모든 환경변수가 산출물에 평문으로 남습니다.**
-> 토큰·API 키·비공개 이메일 같은 비밀 값을 넣지 마세요.
-
----
-
-## 8. 배포
-
-이 리포지토리는 `stu-eonho.github.io`(사용자 사이트)로 배포하도록 이미 설정되어 있습니다.
-`astro.config.mjs`의 `site`와 `src/config/site.ts`의 `url`이 `https://stu-eonho.github.io`를 가리킵니다.
-`base`는 건드리지 않습니다 — 사용자 사이트에서 `base`를 설정하면 모든 자산 경로가 어긋납니다.
-
-1. 리포지토리 이름이 `stu-eonho.github.io`인지 확인합니다.
-2. 이 프로젝트를 그 리포지토리의 `main` 브랜치로 push합니다.
-3. Settings → Pages → **Source를 "GitHub Actions"로 설정**합니다.
-   "Deploy from a branch"를 고르면 Jekyll 파이프라인을 타서 `_astro/` 자산이 누락될 수 있습니다.
-4. Settings → Pages → **Enforce HTTPS**를 켭니다.
-5. `main`에 push하면 `.github/workflows/deploy.yml`이 빌드·배포합니다.
-6. 첫 배포 뒤 `https://stu-eonho.github.io`와 `https://stu-eonho.github.io/en`이 모두 열리는지 확인합니다.
-
-> 다른 주소로 옮길 때 바꿀 값은 `astro.config.mjs`의 `site`와 `src/config/site.ts`의 `url` 두 곳입니다.
-> 이 값이 틀리면 canonical·OG·hreflang·사이트맵·RSS가 전부 잘못된 도메인을 가리킵니다.
-
-타입 오류가 있거나 내부 링크가 깨지면 build 잡이 실패하고 **배포는 일어나지 않습니다.**
-
-### 되돌리기
-
-1. 문제가 된 커밋을 `git revert`하고 push합니다 → 자동 재배포. 이력이 남아 추적할 수 있습니다.
-2. 또는 Actions에서 마지막 정상 실행을 "Re-run all jobs"로 재실행합니다.
-
-`gh-pages` 브랜치를 손으로 고치지 마세요. Actions 기반 배포에는 그런 브랜치가 없고, 수동 개입은 다음 배포에서 덮어써집니다.
-
----
-
-## 9. 이 사이트에 없는 것
-
-의도적으로 넣지 않았습니다. 다시 논의하기 전에는 추가하지 않습니다.
-
-- 서버·데이터베이스·런타임 API — 모든 데이터는 빌드 타임에 이 리포지토리의 파일에서 옵니다
-- 댓글 기능 — 자리표시자나 주석 처리된 코드도 남기지 않습니다
-- **배포된 사이트의** 로그인·회원가입·관리자 화면 — 관리자 콘솔은 `astro dev`에서만 열리며
-  빌드 산출물에 포함되지 않습니다(§2 참조)
-- 조회수·좋아요 등 서버 상태가 필요한 인터랙션
-- 자동 번역 — 영어 글은 사람이 쓴 번역본만 실립니다
-- 브라우저 언어 감지 자동 리다이렉트 — 정적 호스팅이라 리다이렉트를 만들 수 없고,
-  사용자가 고른 언어를 임의로 덮어쓰지 않기 위해서이기도 합니다
-- 논문 PDF 원문 호스팅 — 저작권상 외부 링크(`paper.pdfUrl`)만 저장합니다
-
----
-
-## 10. 디자인과 모션
-
-- 디자인 토큰의 출처는 리포지토리 루트의 `DESIGN.md`입니다. **이 파일은 수정하지 않습니다.**
-  값을 바꿔야 하면 `src/styles/global.css`에 `[local extension]` 주석과 함께 확장 토큰을 추가합니다.
-- 색상·크기·radius는 전부 `global.css`의 CSS 변수를 경유합니다. 컴포넌트에 색상 리터럴을 쓰지 않습니다.
-- 모션은 진입 리빌 한 겹뿐입니다(페이드 + 8px 상승 + 시차). 페이지 전환 애니메이션은 없습니다.
-- `prefers-reduced-motion: reduce`에서는 전환과 애니메이션이 멈추고, anime.js를 아예 내려받지 않습니다.
-- JavaScript가 없어도 모든 페이지의 콘텐츠를 읽고 링크로 탐색할 수 있습니다.
-  JS 없이 잃는 기능은 검색, 테마 토글, 모바일 시트, 목차 하이라이트, 코드 복사뿐입니다.
-  **언어 전환은 JS 없이도 동작합니다** — 링크이기 때문입니다.
+### About this repository
+
+This is the source of the site above: an Astro 7 static site, bilingual by URL, written in
+MDX and deployed to GitHub Pages by GitHub Actions. No server, no database — every page is
+generated at build time from the files here. Notes on running and maintaining it are in
+[`docs/`](docs/README.md) (in Korean).
+
+The posts and images are mine and the code carries no open-source licence, so please ask
+before reusing either. Papers discussed here belong to their authors — only links to the
+originals are stored, never the PDFs.

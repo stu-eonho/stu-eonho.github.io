@@ -76,10 +76,22 @@ const csp = [
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title={SITE.title} href={href('/rss.xml')} />
 
-    {/* 본문용 400 weight 하나만 preload 한다. weight를 늘리면 초기 요청이 그만큼 늘어난다. */}
+    {/*
+      400(본문)과 600(제목·내비) 두 weight를 preload 한다. 스펙 875행은 400 하나만 두지만
+      사용자 승인으로 벗어났다(2026-10-27). 600은 모든 페이지의 h1이 쓰므로 어차피 받는 파일이고,
+      preload는 요청을 늘리지 않고 시작 시점만 앞당긴다. 600이 CSS 파싱 뒤에야 발견되면 첫 페인트를
+      놓쳐 제목이 대체 글꼴(더 넓다)로 두 줄 그려졌다가 한 줄로 튀었다.
+    */}
     <link
       rel="preload"
       href="/fonts/pretendard/Pretendard-Regular.subset.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/pretendard/Pretendard-SemiBold.subset.woff2"
       as="font"
       type="font/woff2"
       crossorigin

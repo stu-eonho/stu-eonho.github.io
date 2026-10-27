@@ -46,6 +46,14 @@ interface CareerEntry {
   description?: MaybeLocalized;
 }
 
+interface AwardEntry {
+  title: MaybeLocalized;
+  rank?: MaybeLocalized;
+  issuer?: MaybeLocalized;
+  date?: string;
+  description?: MaybeLocalized;
+}
+
 interface SkillGroup {
   name: MaybeLocalized;
   items: string[];
@@ -113,6 +121,7 @@ interface Profile {
   location?: MaybeLocalized;
   education: EducationEntry[];
   career: CareerEntry[];
+  awards: AwardEntry[];
   skillGroups: SkillGroup[];
   interests: MaybeLocalized[];
   courses: CourseEntry[];
@@ -188,6 +197,29 @@ export async function initProfile(): Promise<void> {
         employment: optional(getValue(row, 'employment')),
         startDate: getValue(row, 'startDate').trim(),
         endDate: ongoing ? null : (optional(getValue(row, 'endDate')) ?? null),
+        description: readLocalized(localizedIn(row, 'description')),
+      };
+    },
+  });
+
+  const awards = initRepeatable<AwardEntry>(need('[data-repeatable="awards"]'), {
+    create: () => ({ title: '' }),
+    fill(row, value) {
+      writeLocalized(localizedIn(row, 'title'), value.title);
+      writeLocalized(localizedIn(row, 'rank'), value.rank);
+      writeLocalized(localizedIn(row, 'issuer'), value.issuer);
+      setValue(row, 'date', value.date ?? '');
+      writeLocalized(localizedIn(row, 'description'), value.description);
+    },
+    read(row) {
+      const title = readLocalized(localizedIn(row, 'title'));
+      // 이름 없는 행은 버린다 — 홈에 굵은 글씨 없는 빈 항목이 생긴다.
+      if (title === undefined) return undefined;
+      return {
+        title,
+        rank: readLocalized(localizedIn(row, 'rank')),
+        issuer: readLocalized(localizedIn(row, 'issuer')),
+        date: optional(getValue(row, 'date')),
         description: readLocalized(localizedIn(row, 'description')),
       };
     },
@@ -290,6 +322,7 @@ export async function initProfile(): Promise<void> {
         location: readLocalized(need('[data-localized-field="location"]')),
         education: education.read(),
         career: career.read(),
+        awards: awards.read(),
         skillGroups: skills.read(),
         interests: readChips(interestsChips),
         courses: courses.read(),
@@ -308,6 +341,7 @@ export async function initProfile(): Promise<void> {
       setValue(document, 'cvUrl', flatten(value.cvUrl));
       education.write(value.education ?? []);
       career.write(value.career ?? []);
+      awards.write(value.awards ?? []);
       skills.write(value.skillGroups ?? []);
       courses.write(value.courses ?? []);
       links.write(value.links ?? []);

@@ -61,6 +61,19 @@ export interface CareerEntry {
   description?: MaybeLocalized;
 }
 
+export interface AwardEntry {
+  /** 대회·상 이름. 예: { ko: '○○ 해커톤', en: 'OO Hackathon' } */
+  title: MaybeLocalized;
+  /** 수상 등급. 예: { ko: '대상', en: 'Grand Prize' }. 비우면 해당 표기만 생략 */
+  rank?: MaybeLocalized;
+  /** 주최 기관 — 비우면 해당 표기만 생략 */
+  issuer?: MaybeLocalized;
+  /** "YYYY-MM" 또는 "YYYY". 최근 수상이 위로 정렬된다. 비우면 맨 아래로 간다 */
+  date?: string;
+  /** 한 줄 설명 — 무엇으로 받았는지. 비우면 해당 줄만 생략 */
+  description?: MaybeLocalized;
+}
+
 export interface SkillGroup {
   /** 그룹명. 예: "Languages", "ML/DL", "Infra" */
   name: MaybeLocalized;
@@ -138,6 +151,7 @@ export interface Profile {
   location?: MaybeLocalized;
   education: EducationEntry[];
   career: CareerEntry[];
+  awards: AwardEntry[];
   skillGroups: SkillGroup[];
   interests: MaybeLocalized[];
   courses: CourseEntry[];
@@ -206,6 +220,37 @@ export const PROFILE: Profile = {
       role: 'Junior',
       startDate: '2026-07',
       endDate: null,
+    },
+  ],
+
+  /**
+   * 수상. 경력 아래에 나오며 날짜가 최근인 항목이 위로 정렬됩니다.
+   * 배열을 비우면 수상 섹션 전체가 사라집니다.
+   */
+  awards: [
+    {
+      title: { ko: 'AIKUTHON 13회', en: '13th AIKUTHON' },
+      rank: { ko: '3등', en: '3rd Place' },
+      issuer: 'AIKU',
+      date: '2026-08',
+    },
+    {
+      title: {
+        ko: 'AI 도시·지역혁신 아이디어 공모전',
+        en: 'AI Urban & Regional Innovation Idea Competition',
+      },
+      rank: {
+        ko: '최우수상 (주택도시보증공사 사장상)',
+        en: "Top Excellence Award (HUG President's Award)",
+      },
+      issuer: { ko: '국토교통부 외', en: 'Ministry of Land, Infrastructure and Transport et al.' },
+      date: '2026-09',
+    },
+    {
+      title: { ko: '2026 연고전 AI 해커톤', en: '2026 Yonsei–Korea AI Hackathon' },
+      rank: { ko: '5등', en: '5th Place' },
+      issuer: { ko: '연세대·고려대 학생회', en: 'Yonsei & Korea University Student Councils' },
+      date: '2026-10',
     },
   ],
 

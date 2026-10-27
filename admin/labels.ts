@@ -233,6 +233,11 @@ export const L = {
     basic: '기본',
     education: '학적',
     career: '경력',
+    awards: '수상',
+    awardsIntro:
+      '홈의 경력 아래에 나옵니다. 날짜가 최근인 항목이 위로 정렬되므로 입력 순서는 상관없습니다. 이름이 빈 행은 저장할 때 버려집니다.',
+    awardRankHint: '예: 대상 / Grand Prize, 1위 / 1st Place. 이름 뒤에 가운뎃점으로 붙습니다.',
+    awardDateHint: '연도만 알면 2026처럼 적어도 됩니다. 비우면 목록 맨 아래로 갑니다.',
     skills: '스킬',
     skillsIntro:
       '홈의 "스킬" 섹션입니다. 그룹은 칩 묶음 하나이며, 그룹명은 그 묶음의 왼쪽에 붙는 소제목입니다.',

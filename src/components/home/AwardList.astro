@@ -1,0 +1,113 @@
+---
+import { PROFILE, isPlaceholder } from '@/config/profile';
+import { i18n, otherLang, text, type MaybeLocalized } from '@/config/i18n';
+import { formatYearMonthString } from '@/lib/date';
+
+/**
+ * 수상 — 경력 아래.
+ *
+ * 수상은 기간이 아니라 한 시점이라 타임라인(마커·연결선)을 쓰지 않는다. 같은 글자 크기의
+ * 평범한 목록으로 두고, 날짜가 최근인 항목을 위로 올린다.
+ *
+ * CRITICAL: 항목이 0개면 섹션 전체를 렌더링하지 않는다.
+ */
+const { lang, t } = i18n(Astro.url);
+
+/**
+ * 현재 언어 값이 비면 다른 언어 값으로 대체한다 — 관리자에서 "언어별"을 켜고 한쪽만 채우면
+ * `{ ko: '', en: '...' }`가 저장된다(CourseList와 같은 규칙).
+ */
+const pick = (value: MaybeLocalized | undefined): string =>
+  (text(value, lang) || text(value, otherLang(lang)) || '').trim();
+
+const show = (value: MaybeLocalized | undefined): string | undefined => {
+  const resolved = pick(value);
+  return resolved && !isPlaceholder(resolved) ? resolved : undefined;
+};
+
+/** "YYYY-MM" · "YYYY"만 정렬 키로 인정한다. 그 밖의 값은 날짜 없는 항목과 함께 맨 아래로 간다. */
+const sortKey = (date: string | undefined): string =>
+  date && /^\d{4}(-\d{2})?$/.test(date.trim()) ? date.trim() : '';
+
+const entries = PROFILE.awards
+  .map((entry, index) => ({
+    title: pick(entry.title),
+    rank: show(entry.rank),
+    issuer: show(entry.issuer),
+    date: entry.date?.trim() || undefined,
+    detail: show(entry.description),
+    key: sortKey(entry.date),
+    index,
+  }))
+  // 제목이 비면 굵은 글씨 없는 빈 줄이 남는다 — 항목째 뺀다.
+  .filter((entry) => entry.title !== '')
+  // 최근 날짜가 위. 같은 날짜·날짜 없음은 적힌 순서를 지킨다.
+  .sort((a, b) => b.key.localeCompare(a.key) || a.index - b.index);
+---
+
+{
+  entries.length > 0 && (
+    <section class="cv-section" aria-labelledby="awards-heading">
+      <h2 class="cv-heading" id="awards-heading">
+        {t.profile.awards}
+      </h2>
+      <ul class="awards" data-reveal-group>
+        {entries.map((entry) => (
+          <li class="award" data-reveal>
+            <p class="award-title">
+              {entry.title}
+              {entry.rank && <span class="award-rank"> · {entry.rank}</span>}
+            </p>
+            {(entry.issuer || entry.date) && (
+              <p class="meta-text">
+                {entry.issuer}
+                {entry.issuer && entry.date && ' · '}
+                {entry.date &&
+                  (entry.key ? (
+                    <time datetime={entry.key}>{formatYearMonthString(entry.date, lang)}</time>
+                  ) : (
+                    entry.date
+                  ))}
+              </p>
+            )}
+            {entry.detail && <p class="award-detail">{entry.detail}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .awards {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-5); /* 20px — 기간이 없는 만큼 타임라인(24px)보다 촘촘하게 */
+  }
+
+  .award {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-1);
+  }
+
+  .award-title {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .award-rank {
+    font-weight: 400;
+    color: var(--fg-secondary);
+  }
+
+  .award-detail {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    color: var(--fg-secondary);
+  }
+</style>

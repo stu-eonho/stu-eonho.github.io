@@ -152,6 +152,31 @@ const LINK_TYPES = ['github', 'scholar', 'linkedin', 'x', 'email', 'orcid', 'hom
       </RepeatableList>
     </Card>
 
+    {/* ---------- 수상 ---------- */}
+    <Card>
+      <h2 class="admin-section-title">{L.profile.awards}</h2>
+      <p class="admin-hint" style="margin-bottom: var(--spacing-ext-4)">
+        {L.profile.awardsIntro}
+      </p>
+      <RepeatableList path="awards" addLabel="수상 추가" emptyNote={L.profile.emptySection}>
+        <LocalizedField label="대회·상 이름" path="title" />
+        <LocalizedField label="등급 (선택)" path="rank" hint={L.profile.awardRankHint} />
+        <LocalizedField label="주최 (선택)" path="issuer" />
+        <div class="admin-field">
+          <label class="admin-label" for="award-date">날짜 (YYYY-MM)</label>
+          <input
+            class="admin-input"
+            id="award-date"
+            type="text"
+            placeholder="2026-08"
+            data-name="date"
+          />
+          <p class="admin-hint">{L.profile.awardDateHint}</p>
+        </div>
+        <LocalizedField label="한 줄 설명 (선택)" path="description" />
+      </RepeatableList>
+    </Card>
+
     {/* ---------- 스킬 ---------- */}
     <Card>
       <h2 class="admin-section-title">{L.profile.skills}</h2>

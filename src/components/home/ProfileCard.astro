@@ -5,6 +5,7 @@ import Card from '@/components/ui/Card.astro';
 import Button from '@/components/ui/Button.astro';
 import EducationList from './EducationList.astro';
 import CareerList from './CareerList.astro';
+import AwardList from './AwardList.astro';
 import SkillGroups from './SkillGroups.astro';
 import InterestList from './InterestList.astro';
 import CourseList from './CourseList.astro';
@@ -14,7 +15,7 @@ import { i18n, text } from '@/config/i18n';
 /**
  * 홈의 프로필 카드 — CV 한 장처럼 읽히는 단일 덩어리.
  *
- * 신원(사진·이름·소개·연락처·링크) → 소개문 → 학적 → 경력 → 스킬 → 관심 분야 → 수강 과목이
+ * 신원(사진·이름·소개·연락처·링크) → 소개문 → 학적 → 경력 → 수상 → 스킬 → 관심 분야 → 수강 과목이
  * 하나의 Card 안에서 hairline으로만 나뉜다. 섹션을 페이지 전체에 흩뿌리지 않는다.
  *
  * CRITICAL: 프로필 사진은 LCP 요소다 — eager + fetchpriority=high로 두고 리빌을 걸지 않는다.
@@ -73,6 +74,7 @@ const showNameEn = lang === 'ko' && Boolean(PROFILE.nameEn);
 const hasCvBody =
   PROFILE.education.length > 0 ||
   PROFILE.career.length > 0 ||
+  PROFILE.awards.length > 0 ||
   PROFILE.skillGroups.length > 0 ||
   PROFILE.interests.length > 0 ||
   PROFILE.courses.length > 0;
@@ -166,6 +168,7 @@ const hasCvBody =
       <div class="cv-body">
         <EducationList />
         <CareerList />
+        <AwardList />
         <SkillGroups />
         <InterestList />
         <CourseList />

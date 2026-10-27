@@ -26,17 +26,23 @@ import { REVEAL, START_STATE, STAGGER_TOTAL } from './motion-presets';
 /** 요소 하단이 뷰포트 상단선에 40px 못 미쳤을 때 시작한다. */
 const ROOT_MARGIN = '0px 0px -40px 0px';
 
+/** 뷰포트 아래 반 화면 안으로 다가오면 라이브러리를 받고 시작 상태를 준비한다. */
+const PREPARE_MARGIN = '0px 0px 50% 0px';
+
 interface RevealUnit {
   kind: 'group' | 'single';
   root: HTMLElement;
   items: HTMLElement[];
 }
 
+function viewportHeight(): number {
+  return window.innerHeight || document.documentElement.clientHeight;
+}
+
 /** 지금 이 순간 뷰포트와 겹치는가. 겹친다면 이미 사용자 눈에 그려진 요소다. */
 function isOnScreen(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  return rect.top < viewportHeight && rect.bottom > 0;
+  return rect.top < viewportHeight() && rect.bottom > 0;
 }
 
 export async function initMotion(): Promise<void> {
@@ -66,18 +72,44 @@ export async function initMotion(): Promise<void> {
   const byRoot = new Map<Element, RevealUnit>();
   for (const unit of units) byRoot.set(unit.root, unit);
 
+  /** 화면 밖에서 시작 상태로 숨겨 둔 단위. 재생 관측자는 여기 든 것만 재생한다. */
+  const prepared = new Set<Element>();
+
   let loading: Promise<AnimeModule | null> | null = null;
 
-  const observer = new IntersectionObserver(
+  // 준비와 재생을 두 관측자로 나눈다.
+  //
+  // CRITICAL: 숨기는 시점(준비)은 반드시 요소가 화면 밖일 때여야 한다. 예전에는 재생 시점,
+  // 즉 요소가 이미 화면에 40px 들어온 뒤에 숨겼고, 보이던 요소가 한 프레임에 투명해졌다가
+  // 페이드인하는 "끊김"이 스크롤 리빌마다 났다(홈에서 13개 중 6개 실측).
+
+  // 준비 — 뷰포트 아래 반 화면 안으로 다가오면 라이브러리를 받고, 도착했을 때 여전히
+  // 화면 아래에 있으면 그때 숨긴다. 도착이 늦어 이미 화면에 들어왔다면 숨기지 않는다.
+  const prepareObserver = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         const unit = byRoot.get(entry.target);
         if (!unit) continue;
+        prepareObserver.unobserve(entry.target);
+        void prepare(unit);
+      }
+    },
+    { rootMargin: PREPARE_MARGIN },
+  );
+
+  // 재생 — 준비된 단위만 재생한다. 준비되지 못한 단위는 최종 상태 그대로 보인다.
+  const playObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting || !prepared.has(entry.target)) continue;
+        const unit = byRoot.get(entry.target);
+        if (!unit) continue;
 
         // once — 한 번 재생한 뒤 관측을 끊는다. 오르내릴 때 재생이 반복되지 않는다.
-        observer.unobserve(entry.target);
+        playObserver.unobserve(entry.target);
         byRoot.delete(entry.target);
+        prepared.delete(entry.target);
 
         void play(unit);
       }
@@ -85,25 +117,27 @@ export async function initMotion(): Promise<void> {
     { rootMargin: ROOT_MARGIN },
   );
 
-  for (const unit of units) observer.observe(unit.root);
+  for (const unit of units) prepareObserver.observe(unit.root);
 
-  async function play(unit: RevealUnit): Promise<void> {
+  async function prepare(unit: RevealUnit): Promise<void> {
     // 게이트 4 — 여기서야 로드. 쓰는 것만 import 해 트리셰이킹을 살린다.
     loading ??= load();
     const anime = await loading;
     if (!anime) return;
 
-    const { animate, stagger, utils } = anime;
+    // 요소 윗변이 뷰포트 아래에 있을 때만 숨긴다. 그 밖의 경우는 이미 보이고 있다.
+    if (unit.root.getBoundingClientRect().top < viewportHeight()) return;
 
-    // 라이브러리가 실제로 도착한 뒤에야 시작 상태를 세팅한다.
-    // 도착이 늦어 그사이 요소가 화면에 들어와 버렸다면, 숨겼다 보여주면 깜빡이므로 건너뛴다.
-    if (isOnScreen(unit.root)) {
-      const rect = unit.root.getBoundingClientRect();
-      const alreadyWellInside = rect.top < (window.innerHeight || 0) * 0.9;
-      if (alreadyWellInside) return;
-    }
+    anime.utils.set(unit.items, START_STATE);
+    prepared.add(unit.root);
+    playObserver.observe(unit.root);
+  }
 
-    utils.set(unit.items, START_STATE);
+  async function play(unit: RevealUnit): Promise<void> {
+    const anime = await loading;
+    if (!anime) return;
+
+    const { animate, stagger } = anime;
 
     animate(unit.items, {
       ...(unit.kind === 'group' ? REVEAL.onEnterStagger : REVEAL.onEnter),

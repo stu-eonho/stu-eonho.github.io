@@ -188,6 +188,7 @@ const ko = {
   profile: {
     education: '학적',
     career: '경력',
+    awards: '수상',
     skills: '스킬',
     interests: '관심 분야',
     courses: '수강 과목',
@@ -399,6 +400,7 @@ const en: UIStrings = {
   profile: {
     education: 'Education',
     career: 'Experience',
+    awards: 'Awards',
     skills: 'Skills',
     interests: 'Research interests',
     courses: 'Coursework',
