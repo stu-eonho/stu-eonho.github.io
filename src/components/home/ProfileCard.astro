@@ -49,9 +49,6 @@ const affiliation = top
     ].join(' ')
   : undefined;
 
-// 현재 소속 조직 — 재직 중인 경력이 있으면 소속 줄 옆에 함께 보여 준다.
-const currentJob = PROFILE.career.find((entry) => entry.endDate === null);
-
 // CRITICAL: 플레이스홀더 URL로는 링크를 만들지 않는다 — 깨진 링크가 배포된다.
 // CRITICAL: href는 `socialHref`를 거친다 — 스킴 없는 값이 사이트 내부 경로가 되는 것을 막는다.
 const links = PROFILE.links
@@ -119,13 +116,6 @@ const hasCvBody =
 
       <ul class="facts">
         {affiliation && <li>{affiliation}</li>}
-        {
-          currentJob && (
-            <li>
-              {text(currentJob.company, lang)} · {text(currentJob.role, lang)}
-            </li>
-          )
-        }
         {facts.map((fact) => <li>{fact}</li>)}
       </ul>
 
