@@ -31,6 +31,12 @@ export interface SeoInput {
    * 검색엔진이 중복으로 보고 양쪽 평가를 함께 깎는다. 원문 URL 하나로 몰아 준다.
    */
   canonicalLang?: Lang;
+  /**
+   * 검색엔진 색인에서 뺀다(`<meta name="robots" content="noindex">`).
+   * 빈 상태처럼 보여 줄 내용이 아직 없는 페이지가 쓴다. 이 메타가 붙은 페이지는 사이트맵에서도
+   * 빠진다 — astro.config.mjs의 sitemap `filter`가 빌드된 HTML에서 이 메타를 읽는다.
+   */
+  noindex?: boolean;
 }
 
 export interface Alternate {
@@ -53,6 +59,7 @@ export interface SeoMeta {
   tags: string[];
   /** `<link rel="alternate" hreflang>` 목록. x-default가 마지막에 붙는다 */
   alternates: Alternate[];
+  noindex: boolean;
 }
 
 function absolute(path: string): string {
@@ -89,6 +96,7 @@ export function buildSeo(input: SeoInput): SeoMeta {
       // x-default — 언어를 특정할 수 없는 방문자가 도착할 기본 URL
       { hreflang: 'x-default', href: absolute(withLang(input.path, DEFAULT_LANG)) },
     ],
+    noindex: input.noindex ?? false,
   };
 }
 

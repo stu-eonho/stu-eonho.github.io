@@ -348,7 +348,9 @@ const ko = {
     description: '공부 기록의 뒷면 — 요즘 자주 듣는 노래와 앨범',
     linkLabel: 'Side B — 좋아하는 음악',
     kind: { song: '노래', album: '앨범' },
-    cardLabel: (title: string, artist: string) => `${title} — ${artist}, 자세히 보기`,
+    /** 가수가 비면 ` — 가수`를 통째로 뺀다 — "제목 — , 자세히 보기"를 읽지 않게 */
+    cardLabel: (title: string, artist: string) =>
+      `${title}${artist ? ` — ${artist}` : ''}, 자세히 보기`,
     flipBack: '앞면으로',
     listen: '듣기',
     listenOn: (service: string) => `${service}에서 듣기`,
@@ -566,7 +568,9 @@ const en: UIStrings = {
     description: 'The flip side of my study log — songs and albums on repeat',
     linkLabel: 'Side B — music I love',
     kind: { song: 'Song', album: 'Album' },
-    cardLabel: (title: string, artist: string) => `${title} — ${artist}, show details`,
+    /** ko와 같은 규칙 — 가수가 비면 ` — 가수`를 뺀다 */
+    cardLabel: (title: string, artist: string) =>
+      `${title}${artist ? ` — ${artist}` : ''}, show details`,
     flipBack: 'Back to cover',
     listen: 'Listen',
     listenOn: (service: string) => `Listen on ${service}`,

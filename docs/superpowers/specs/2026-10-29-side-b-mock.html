@@ -1,0 +1,94 @@
+<style>
+  .demo-row { display: flex; gap: 48px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+  .col h3 { text-align: center; margin: 0 0 4px; }
+  .col p.subtitle { text-align: center; max-width: 260px; margin: 0 auto 18px; }
+  .tilt { width: 240px; height: 240px; perspective: 900px; margin: 0 auto; }
+  .tilt-inner { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .25s ease-out; will-change: transform; }
+  .stage { width: 100%; height: 100%; }
+  .mcard { position: relative; width: 240px; height: 240px; cursor: pointer; border: 0; padding: 0; background: none; font: inherit; color: inherit; text-align: left; display: block;
+    transform-style: preserve-3d; transition: transform .7s cubic-bezier(.2,.7,.2,1); }
+  .face { position: absolute; inset: 0; border-radius: 18px; border: 1px solid rgb(0 0 0 / .08); background: #fff; color: #1d1d1f; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .front .cover { position: absolute; inset: 0; }
+  .meta { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 14px 12px; background: linear-gradient(transparent, rgb(0 0 0 / .55)); }
+  .kind { font-size: 11px; color: rgb(255 255 255 / .8); }
+  .title { font-size: 15px; font-weight: 600; margin: 2px 0 0; line-height: 1.3; color: #fff; }
+  .artist { font-size: 13px; color: rgb(255 255 255 / .8); margin-top: 2px; }
+  .back { padding: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.5; transform: rotate3d(1, -1, 0, 180deg); }
+  .back .title { font-size: 14px; color: #1d1d1f; }
+  .back .artist { color: #6e6e73; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 11px; padding: 2px 8px; border-radius: 980px; background: rgb(0 113 227 / .08); color: #0066cc; }
+  .hint { margin-top: auto; font-size: 11px; color: #6e6e73; }
+  .mcard.on { transform: rotate3d(1, -1, 0, 180deg); }
+  .glare { position: absolute; inset: 0; border-radius: 18px; pointer-events: none; opacity: 0; transition: opacity .25s;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / .35), transparent 55%); }
+  .tilt.has-glare:hover .glare { opacity: 1; }
+</style>
+
+<h2>마우스를 따라 기울어지는 정도</h2>
+<p class="subtitle">커버 위에서 마우스를 움직여 보세요. 눌러서 뒤집히는 것도 그대로 됩니다.</p>
+
+<div class="demo-row">
+  <div class="col">
+    <h3>1 · 살짝</h3>
+    <p class="subtitle">최대 6° 기울기. 있는 듯 없는 듯, 사이트의 잔잔한 분위기에 가까움.</p>
+    <div class="tilt" data-max="6">
+      <div class="tilt-inner">
+        <button class="mcard" onclick="this.classList.toggle('on')">
+          <div class="face front">
+            <div class="cover" style="background:linear-gradient(135deg,#ff9a8b,#ff6a88 55%,#ff99ac)"></div>
+            <div class="meta"><div class="kind">앨범</div><div class="title">Album Title</div><div class="artist">Artist Name</div></div>
+          </div>
+          <div class="face back">
+            <div><div class="title">Album Title</div><div class="artist">Artist Name · 2019</div></div>
+            <div class="chips"><span class="chip">Indie Rock</span></div>
+            <div>공부할 때 처음부터 끝까지 틀어 두는 앨범.</div>
+            <div class="hint">다시 눌러 앞면으로</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <h3>2 · 확실하게 + 빛 반사</h3>
+    <p class="subtitle">최대 12° 기울기에 마우스 위치로 빛이 비침. 더 재밌지만 눈에 띔.</p>
+    <div class="tilt has-glare" data-max="12">
+      <div class="tilt-inner">
+        <button class="mcard" onclick="this.classList.toggle('on')">
+          <div class="face front">
+            <div class="cover" style="background:linear-gradient(135deg,#a1c4fd,#5b7fd6)"></div>
+            <div class="meta"><div class="kind">노래</div><div class="title">Song Title</div><div class="artist">Artist Name</div></div>
+            <div class="glare"></div>
+          </div>
+          <div class="face back">
+            <div><div class="title">Song Title</div><div class="artist">Artist Name · 2021</div></div>
+            <div class="chips"><span class="chip">R&amp;B</span></div>
+            <div>새벽에 코딩하다 막힐 때 듣는 노래.</div>
+            <div class="hint">다시 눌러 앞면으로</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:28px">
+  <div class="option" data-choice="subtle" onclick="toggleSelect(this)"><div class="letter">1</div><div class="content"><h3>살짝 (6°)</h3></div></div>
+  <div class="option" data-choice="strong" onclick="toggleSelect(this)"><div class="letter">2</div><div class="content"><h3>확실하게 + 빛 반사 (12°)</h3></div></div>
+</div>
+
+<img src="data:," alt="" style="display:none" onerror="
+  document.querySelectorAll('.tilt').forEach(function (t) {
+    var inner = t.querySelector('.tilt-inner');
+    var max = Number(t.dataset.max);
+    t.addEventListener('pointermove', function (e) {
+      var r = t.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+      inner.style.transform = 'rotateX(' + ((0.5 - py) * 2 * max) + 'deg) rotateY(' + ((px - 0.5) * 2 * max) + 'deg)';
+      t.style.setProperty('--gx', px * 100 + '%');
+      t.style.setProperty('--gy', py * 100 + '%');
+    });
+    t.addEventListener('pointerleave', function () { inner.style.transform = ''; });
+  });
+">

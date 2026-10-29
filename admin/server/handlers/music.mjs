@@ -12,10 +12,20 @@
  * CRITICAL: 커버 자동 삭제는 이 파일에서만, `src/assets/side-b/` 안에서만 일어난다.
  *   - `writeDeclaration`이 성공한 **뒤에만** 지운다. 쓰기가 던지면 아무것도 지우지 않는다.
  *   - 지울 후보는 방금 **저장한 값**이 참조하지 않는 이름이다(요청 원본이 아니라).
- *   - 일반 파일(심볼릭 링크·디렉터리 제외)이고 이미지 확장자인 것만 후보다.
+ *   - 후보는 **쓰기 전에 검증용으로 읽은 목록**에서만 고른다. 쓰기 뒤 폴더를 다시 읽지 않으므로
+ *     저장이 도는 동안 올라온 커버는 후보가 되지 않는다(다음 저장 때 판단된다).
+ *   - 일반 파일(심볼릭 링크·디렉터리 제외)이고 이미지 확장자인 것만 후보다. 지우기 직전에
+ *     `lstat`으로 한 번 더 일반 파일인지 본다.
+ *   - `side-b/` 자체가 심볼릭 링크·정션이면 정리를 통째로 건너뛴다 — `lstat`이 링크로 보거나,
+ *     `realpath(side-b)`가 `realpath(src/assets)/side-b`와 다르면 그렇다.
  *   - 각 경로는 `assertInsideAllowedRoot`를 통과하고, 실제 위치가 `side-b/` 바로 아래여야 한다.
+ *   - 정리 단계의 어떤 실패도 이미 끝난 저장을 오류로 바꾸지 않는다 — 터미널에 남기고 건너뛴다.
+ *
+ * 입력 검증: 문자열 필드(`title`·`artist`·`album`·`year`·`cover`)가 문자열이 아닌 값으로 오거나
+ * `genres`가 문자열 배열이 아니면 조용히 비우지 않고 `E-VALIDATION`으로 거절한다 — 비워서
+ * 저장하면 그 커버가 미참조로 보여 지워진다. 키가 없거나 `null`이면 "값 없음"이다.
  */
-import { readdir } from 'node:fs/promises';
+import { lstat, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { fail } from '../errors.mjs';
 import { mtimeOf, removeFile } from '../fsx.mjs';
@@ -56,6 +66,20 @@ function str(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** 키가 없거나 `null`이면 "값 없음"으로 본다. 그 밖의 비문자열은 형식 오류다. @param {unknown} value */
+function isWrongType(value) {
+  return value !== undefined && value !== null && typeof value !== 'string';
+}
+
+/** 문자열 필드 이름 → 형식 오류 문구 */
+const STRING_FIELDS = /** @type {const} */ ({
+  title: '제목은 문자열이어야 합니다.',
+  artist: '가수는 문자열이어야 합니다.',
+  album: '앨범은 문자열이어야 합니다.',
+  year: '연도는 문자열이어야 합니다.',
+  cover: '커버는 파일명 문자열이어야 합니다.',
+});
+
 /**
  * 저장 전 처리. 순서는 고정이다 — 빈 제목 행 제거 → trim → 장르 → 링크 → 연도 → 이유 →
  * 커버 → 종류별 필드. 실패는 모아서 한 번에 던진다(`detail.issues`).
@@ -81,11 +105,19 @@ function sanitize(input, lib, covers) {
     const row = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
     const at = (/** @type {string} */ key) => `music.${index}.${key}`;
 
-    // 1. 제목이 빈 행은 버린다.
+    // 1. 제목이 빈 행은 버린다. 문자열이 아닌 제목은 빈 행이 아니라 형식 오류다.
+    if (isWrongType(row.title)) {
+      issues.push({ field: at('title'), message: STRING_FIELDS.title });
+      return;
+    }
     const title = str(row.title);
     if (!title) return;
 
-    // 2. 문자열 필드 trim.
+    // 2. 문자열 필드 형식 검사 → trim. 형식이 틀린 값을 ''로 접으면 커버가 미참조로 보여
+    //    저장 뒤 정리 단계에서 지워지므로 반드시 거절한다.
+    for (const key of /** @type {const} */ (['artist', 'album', 'year', 'cover'])) {
+      if (isWrongType(row[key])) issues.push({ field: at(key), message: STRING_FIELDS[key] });
+    }
     const kind = row.kind;
     if (kind !== 'song' && kind !== 'album') {
       issues.push({
@@ -102,6 +134,16 @@ function sanitize(input, lib, covers) {
     /** @type {string[]} */
     const genres = [];
     const seen = new Set();
+    if (
+      row.genres !== undefined &&
+      row.genres !== null &&
+      !(
+        Array.isArray(row.genres) &&
+        row.genres.every((/** @type {unknown} */ name) => typeof name === 'string')
+      )
+    ) {
+      issues.push({ field: at('genres'), message: '장르는 문자열 목록이어야 합니다.' });
+    }
     for (const name of Array.isArray(row.genres) ? row.genres : []) {
       const trimmed = str(name);
       if (!trimmed) continue;
@@ -222,33 +264,59 @@ export async function writeMusic({ body, projectRoot, server, logger }) {
     logger,
   });
 
-  const removedCovers = await removeUnreferencedCovers(projectRoot, music, logger);
+  // 후보는 쓰기 **전** 목록(`covers`)에서만 — 저장 도중 올라온 업로드를 지우지 않는다.
+  const removedCovers = await removeUnreferencedCovers(projectRoot, covers, music, logger);
   return { mtime, changed, removedCovers };
 }
 
 /**
  * 저장된 `MUSIC`이 참조하지 않는 `side-b/` 파일을 지운다. 지운 이름 목록을 돌려준다.
  *
- * 한 파일의 삭제 실패는 저장을 실패로 만들지 않는다(이미 디스크에 쓰였다). 터미널에 남기고
- * 다음 파일로 넘어간다 — 남은 파일은 다음 저장 때 다시 후보가 된다.
+ * 정리 단계의 실패는 저장을 실패로 만들지 않는다(이미 디스크에 쓰였다). 폴더 단위 검사가
+ * 실패하면 아무것도 지우지 않고, 한 파일의 실패는 그 파일만 건너뛴다. 어느 쪽이든 터미널에
+ * 남긴다 — 남은 파일은 다음 저장 때 다시 후보가 된다.
  *
  * @param {string} projectRoot
+ * @param {string[]} candidates 쓰기 전에 읽은 커버 목록 — 이 안에서만 지운다
  * @param {Record<string, unknown>[]} saved
  * @param {any} logger
  */
-async function removeUnreferencedCovers(projectRoot, saved, logger) {
+async function removeUnreferencedCovers(projectRoot, candidates, saved, logger) {
   const referenced = new Set(
     saved.map((entry) => entry.cover).filter((cover) => typeof cover === 'string'),
   );
-  const coversDir = dirs(projectRoot).musicCovers;
-  const realCoversDir = await assertInsideAllowedRoot(projectRoot, coversDir);
+  const unreferenced = candidates.filter((name) => !referenced.has(name));
+  if (unreferenced.length === 0) return [];
+
+  const { assets, musicCovers: coversDir } = dirs(projectRoot);
+  /** @type {string} */
+  let realCoversDir;
+  try {
+    // `side-b/` 자체가 링크·정션이면 지울 범위가 폴더 밖으로 옮겨 갈 수 있다 — 정리하지 않는다.
+    // Windows 정션은 Node의 lstat에서 심볼릭 링크로 보인다. 그래도 realpath 비교를 한 번 더 한다.
+    if ((await lstat(coversDir)).isSymbolicLink()) {
+      throw fail('E-PATH-ESCAPE', 'side-b 폴더가 링크입니다.');
+    }
+    realCoversDir = await assertInsideAllowedRoot(projectRoot, coversDir);
+    const [realDir, realAssets] = await Promise.all([realpath(coversDir), realpath(assets)]);
+    const expected = path.join(realAssets, 'side-b');
+    if (realDir !== expected || realCoversDir !== expected) {
+      throw fail('E-PATH-ESCAPE', 'side-b 폴더의 실제 위치가 src/assets/side-b가 아닙니다.');
+    }
+  } catch (error) {
+    logger?.warn?.(`Side B 커버 정리를 건너뜁니다 — ${String(error)}`);
+    return [];
+  }
 
   /** @type {string[]} */
   const removed = [];
-  for (const name of await listMusicCovers(projectRoot)) {
-    if (referenced.has(name)) continue;
+  for (const name of unreferenced) {
     const target = path.join(coversDir, name);
     try {
+      // 목록을 읽은 뒤 링크·폴더로 바뀌었으면 지우지 않는다.
+      if (!(await lstat(target)).isFile()) {
+        throw fail('E-PATH-ESCAPE', '일반 파일이 아닙니다.');
+      }
       const resolved = await assertInsideAllowedRoot(projectRoot, target);
       if (path.dirname(resolved) !== realCoversDir) {
         throw fail('E-PATH-ESCAPE', '잘못된 경로입니다.', { detail: { attempted: resolved } });

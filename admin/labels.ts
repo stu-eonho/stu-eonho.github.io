@@ -8,6 +8,9 @@
  * 관리자 화면은 한국어 고정이다 — 운영자 1인, 한국어 사용자.
  */
 
+// 타입 전용 — 값은 가져오지 않는다. 관리자는 src/lib를 쓸 수 있으나 src/config는 쓰지 않는다.
+import type { ListenService } from '@/lib/music';
+
 export const L = {
   app: {
     title: '관리자 콘솔',
@@ -308,14 +311,14 @@ export const L = {
     listenUrl: '듣기 링크 (선택)',
     listenHint:
       '주소만 적어도 됩니다 — 저장할 때 https://를 붙입니다. http(s)가 아닌 주소는 저장되지 않습니다.',
-    /** 링크 칸 옆 판정 결과. `src/lib/music.ts`의 `ListenService` 키와 같아야 한다 */
+    /** 링크 칸 옆 판정 결과. 키가 `ListenService`와 어긋나면 `astro check`가 잡는다 */
     services: {
       youtube: 'YouTube',
       'youtube-music': 'YouTube Music',
       spotify: 'Spotify',
       'apple-music': 'Apple Music',
       melon: 'Melon',
-    },
+    } satisfies Record<ListenService, string>,
     removedCovers: (n: number) => `쓰지 않는 커버 파일 ${n}개를 정리했습니다`,
   },
 

@@ -54,6 +54,16 @@ if (entry.cover && !cover && lang === DEFAULT_LANG) {
   );
 }
 const initial = Array.from(title)[0]?.toUpperCase() ?? '';
+/*
+  커버의 실제 표시 폭. SideBView의 `.music-grid`(minmax(260px, 1fr), 간격 20px)가 `.container`
+  (최대 1120px, 좌우 패딩 모바일 22px · 768px 이상 24px) 안에 있으므로 —
+    3열: 내용 폭 3×260+2×20 = 820px 이상 → 창 868px + 스크롤바 자리(scrollbar-gutter: stable, 약 15px) ≈ 884px
+    2열: 내용 폭 2×260+20 = 540px 이상 → 창 584px + 15px ≈ 600px
+    최대: 내용 폭 1072px일 때 카드 (1072−40)/3 = 344px
+  경계 부근에서는 실제보다 조금 크게 잡히는 쪽으로 반올림했다(작게 잡으면 흐려진다).
+*/
+const COVER_SIZES =
+  '(min-width: 1120px) 344px, (min-width: 884px) 33vw, (min-width: 600px) 50vw, 100vw';
 
 // 같은 카드 안의 중복 장르(대소문자·공백 차이)는 하나로 본다. 필터 키도 같은 규칙이다.
 const genres: { key: string; label: string }[] = [];
@@ -93,7 +103,7 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
                 src={cover}
                 alt=""
                 widths={[360, 720, 1080]}
-                sizes="(min-width: 1120px) 350px, (min-width: 640px) 50vw, 100vw"
+                sizes={COVER_SIZES}
                 loading={eager ? 'eager' : 'lazy'}
               />
             </div>

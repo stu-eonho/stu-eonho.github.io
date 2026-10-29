@@ -47,6 +47,7 @@ const csp = [
 
     <title>{seo.fullTitle}</title>
     <meta name="description" content={seo.description} />
+    {seo.noindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={seo.canonical} />
 
     {
