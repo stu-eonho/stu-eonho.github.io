@@ -6,6 +6,9 @@
  *   2. `src/content/posts/<id>/` 폴더를 만든다
  * `src/pages/` 아래 어떤 파일도 만들거나 수정하지 않는다. 내비게이션·목록·페이지네이션·
  * 상세 라우트·Zod enum이 전부 이 배열에서 파생된다.
+ *
+ * 예약 id: `side-b`는 `src/pages/side-b.astro`가 쓰는 경로라 카테고리 id로 쓸 수 없다
+ * (`[category]` 동적 라우트와 충돌한다). `archive`·`tags` 등 기존 정적 페이지 이름도 마찬가지다.
  */
 
 import type { Lang, Localized } from './i18n';

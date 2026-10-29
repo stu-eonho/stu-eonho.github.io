@@ -13,6 +13,8 @@
  * `astro check`가 실패한다 — 이것이 번역 누락을 막는 유일한 자동 장치다.
  */
 
+import type { ListenService } from '../lib/music';
+
 export const LOCALES = ['ko', 'en'] as const;
 export type Lang = (typeof LOCALES)[number];
 
@@ -340,6 +342,29 @@ const ko = {
     noscriptAfter: '에서 찾아보세요.',
   },
 
+  /** Side B (좋아하는 음악) */
+  sideB: {
+    title: 'Side B',
+    description: '공부 기록의 뒷면 — 요즘 자주 듣는 노래와 앨범',
+    linkLabel: 'Side B — 좋아하는 음악',
+    kind: { song: '노래', album: '앨범' },
+    cardLabel: (title: string, artist: string) => `${title} — ${artist}, 자세히 보기`,
+    flipBack: '앞면으로',
+    listen: '듣기',
+    listenOn: (service: string) => `${service}에서 듣기`,
+    services: {
+      youtube: 'YouTube',
+      'youtube-music': 'YouTube Music',
+      spotify: 'Spotify',
+      'apple-music': 'Apple Music',
+      melon: 'Melon',
+    } satisfies Record<ListenService, string>,
+    filterLabel: '장르로 거르기',
+    all: '전체',
+    resultCount: (label: string, n: number) => `${label} — ${n}개`,
+    emptyTitle: '아직 담긴 음악이 없습니다',
+  },
+
   /** 404 */
   notFound: {
     title: '404',
@@ -534,6 +559,28 @@ const en: UIStrings = {
     noscriptBefore: 'Search needs JavaScript. Try the ',
     noscriptLink: 'archive',
     noscriptAfter: ' instead.',
+  },
+
+  sideB: {
+    title: 'Side B',
+    description: 'The flip side of my study log — songs and albums on repeat',
+    linkLabel: 'Side B — music I love',
+    kind: { song: 'Song', album: 'Album' },
+    cardLabel: (title: string, artist: string) => `${title} — ${artist}, show details`,
+    flipBack: 'Back to cover',
+    listen: 'Listen',
+    listenOn: (service: string) => `Listen on ${service}`,
+    services: {
+      youtube: 'YouTube',
+      'youtube-music': 'YouTube Music',
+      spotify: 'Spotify',
+      'apple-music': 'Apple Music',
+      melon: 'Melon',
+    } satisfies Record<ListenService, string>,
+    filterLabel: 'Filter by genre',
+    all: 'All',
+    resultCount: (label: string, n: number) => `${label} — ${n} item${n === 1 ? '' : 's'}`,
+    emptyTitle: 'No music here yet',
   },
 
   notFound: {
