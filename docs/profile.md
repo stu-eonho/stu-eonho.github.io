@@ -128,6 +128,9 @@ courses: [
 스킴 없는 주소를 그대로 두면 브라우저가 **사이트 내부 경로**로 읽어
 `https://stu-eonho.github.io/eonho@korea.ac.kr` 같은 404 링크가 됩니다. 이 보정이 그것을 막습니다.
 
+소셜 아이콘 줄 끝의 레코드 아이콘은 `links`가 아니라 Side B 진입 링크입니다. `src/config/music.ts`의
+`MUSIC`이 비어 있지 않을 때만 나오며, `links`를 비워도 남습니다 — [Side B 채우기](side-b.md).
+
 ## 비웠을 때 어떻게 되나
 
 | 비운 항목                                      | 화면                                                  |

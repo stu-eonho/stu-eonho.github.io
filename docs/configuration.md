@@ -6,6 +6,7 @@
 | `src/config/i18n.ts`       | 언어 정의와 화면 문구 사전. **UI 문자열은 여기서만 정의합니다**        |
 | `src/config/categories.ts` | 카테고리 단일 정의 지점                                                |
 | `src/config/profile.ts`    | 프로필                                                                 |
+| `src/config/music.ts`      | Side B 곡·앨범 목록 — [Side B 채우기](side-b.md)                       |
 | `astro.config.mjs`         | `site` 절대 URL. 다른 호스트로 옮길 때 바꿀 값은 이것 하나뿐입니다     |
 | `src/styles/global.css`    | 디자인 토큰 (`[verified]` / `[local extension]` 출처 주석 포함)        |
 

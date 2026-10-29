@@ -14,7 +14,7 @@
 | -- | ------------------------------------- | ---------------------------------------------------------- |
 | 1  | `admin/` 디렉터리 배치                | 파일 기반 라우터의 시야(`src/pages/`) 밖에 있다            |
 | 2  | `admin/integration.mjs`               | `command !== 'dev'`면 `astro:config:setup`이 즉시 반환한다 |
-| 3  | `adminApiPlugin`                      | `apply: 'serve'` + `configureServer` 훅 하나뿐이다          |
+| 3  | `adminApiPlugin`, `quietMusicCoverUploads` | 둘 다 `apply: 'serve'`. 각각 `configureServer` 훅 하나, `hotUpdate` 훅 하나뿐이다 (§20) |
 | 4  | `admin/build-guard.mjs`               | `astro:build:done`에서 `dist`를 검사해 유출 시 빌드를 깬다  |
 
 **가드 역검증 (실측):**
@@ -108,6 +108,7 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
 | `site.ts`        | `SITE`       | 초기자 전체 교체         | `navOrder` 표현식, `url`의 `env ?? '…'` 형태   |
 | `categories.ts`  | `CATEGORIES` | 초기자 전체 교체         | `as const satisfies readonly Category[]` 꼬리  |
 | `i18n.ts`        | `ko` / `en`  | 문자열 리터럴 단위 교체  | 섹션 주석 23개, 함수형 값 18개                 |
+| `music.ts`       | `MUSIC`      | 초기자 전체 교체         | 상단 문서 주석, `MusicEntry`, 뒤따르는 `import.meta.glob`·`musicCover` |
 
 **항등성 실측 (값을 읽어 그대로 다시 쓰기):**
 
@@ -116,6 +117,7 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
 | `categories.ts` | **바이트 동일**                                                            |
 | `site.ts`       | **바이트 동일**                                                            |
 | `i18n.ts`       | **바이트 동일** (문자열 100개 × 2언어). 한 값만 바꾸면 정확히 한 줄만 변경 |
+| `music.ts`      | **바이트 동일** (GET 값을 그대로 PUT → `changed: false`). 값을 바꿔도 `MUSIC` 초기자 밖은 바이트 동일 |
 | `profile.ts`    | 아래 2가지만 차이. 나머지 전부 동일                                        |
 
 `profile.ts`에서 되살릴 수 없는 것:
@@ -242,6 +244,7 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
 | `/admin/posts`      | `GET /posts`, `POST /posts/:id/translation`, `DELETE /posts/:id`         |
 | `/admin/posts/edit` | `GET/POST/PUT /posts`, `POST /preview`, `GET/POST /assets`, `GET /session` |
 | `/admin/profile`    | `GET/PUT /profile`, `GET /posts`(수강 과목의 관련 글 드롭다운), `POST /assets`(`purpose: profile-photo`)             |
+| `/admin/side-b`     | `GET/PUT /side-b`, `POST /assets`(`purpose: music-cover`)                |
 | `/admin/settings`   | `GET/PUT /config/site`, `GET/PUT /config/categories`, `GET /config/icons` |
 | `/admin/strings`    | `GET/PUT /strings`                                                       |
 | `/admin/tags`       | `GET /tags`, `POST /tags/{rename,merge,delete}`                          |
@@ -313,6 +316,8 @@ Node의 모듈 그래프이므로 그 안의 상대 경로 동적 import는 정�
   새로고침으로 번지지 않게 한다. (Vite 6+에서 `import.meta.hot.decline()`은 제거되었다.)
 - 관리자가 `src/config/*`나 `src/content/**`를 쓰면 Vite가 모듈을 갱신해 **사이트 탭이** 자동으로
   새로고침된다. 이것은 의도된 부수효과다.
+- **예외 하나:** `src/assets/side-b/`에 파일이 **생기는**(`create`) 갱신은 `quietMusicCoverUploads`가
+  삼킨다. 그러지 않으면 커버 업로드가 관리자 탭까지 새로고침한다. 이유와 부작용은 §20.
 
 ---
 
@@ -607,3 +612,101 @@ Article JSON-LD에 `description` 키 없음 · RSS item에 `<description>` 없�
 
 글 상세의 `post-desc`도 요소 없이 CSS 규칙만 남는 것을 확인했다.
 
+---
+
+## 20. Side B — `/admin/side-b` (2026-10-29, 사용자 요청)
+
+설계: `docs/superpowers/specs/2026-10-29-side-b-design.md` §8. 사이트 쪽 안내는 `docs/side-b.md`.
+
+### API
+
+| 엔드포인트                                     | 요청 / 응답                                                                      |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- |
+| `GET /side-b`                                  | → `{ music, covers, mtime }`. `music`은 `ssrLoadModule`로 평가한 `MUSIC`의 JSON 복제, `covers`는 `src/assets/side-b/`의 이미지 파일명(정렬) |
+| `PUT /side-b`                                  | `{ music, baseMtime }` → `{ mtime, changed, removedCovers }`                     |
+| `POST /assets` + `purpose: 'music-cover'`      | `src/assets/side-b/`에 저장(폴더가 없으면 만든다). 응답 `name`은 폴더 없는 파일명. 크기·형식 검사와 이름 규칙은 기존 업로드와 같다 |
+
+`listAssets`(`/admin/assets`)는 `src/assets/` 최상위의 파일만 보므로 커버가 그 화면에 나오지 않는다.
+그 화면에서 커버를 지워 빌드가 깨지는 경로가 없다(실측: 업로드 뒤 `GET /assets`에 `side-b`·커버 0건).
+
+### 저장 전 처리 (`admin/server/handlers/music.mjs`)
+
+순서 고정 — 빈 제목 행 제거 → trim → 장르(빈 값 제거, `genreKey` 기준 중복 제거, 처음 표기 유지)
+→ `listenUrl`(`normalizeListenUrl`: `null`이면 422, `undefined`면 키 삭제) → `year`(`/^\d{4}$/`)
+→ `note`(문자열 하나 또는 `{ ko, en }` 각각 140자 이하) → `cover`(`side-b/`에 실제로 있는 이름)
+→ `album`은 `kind === 'song'`일 때만. 잘못된 `kind`도 422.
+
+- 규칙은 `src/lib/music.ts` 한 곳에 있고 `loadMusicLib`(`ssrLoadModule`)로 불러 쓴다. 다시 구현하지 않는다.
+- 문제는 모아서 `E-VALIDATION` 하나로 던진다. `field`·`message`는 첫 문제, 전체는 `detail.issues`.
+  경로는 `music.<제출된 인덱스>.<키>`(`note.ko`/`note.en`)이므로 **클라이언트는 빈 행도 버리지 않고
+  화면 순서대로 전부 보낸다.** 클라이언트는 읽을 때마다 행의 `data-field`를 `music.<DOM 인덱스>.<키>`로
+  다시 매긴다 — 행을 추가·삭제·이동해도 오류가 맞는 행에 붙는다.
+- 키는 `MusicEntry` 선언 순서로 방출한다. 비운 `album`·`year`·`cover`·`note`는 생략한다.
+  클라이언트도 같은 순서·같은 규칙으로 읽으므로 다시 열면 변경 0건이다.
+
+### CRITICAL: 커버 자동 삭제의 경계
+
+저장할 때 `src/assets/side-b/`에서 **저장된 값**이 참조하지 않는 이미지 파일을 지운다. 자동 삭제는
+관리자 전체에서 이 한 곳뿐이다.
+
+- `writeDeclaration`이 성공한 **뒤에만** 지운다. 검증 실패·`E-STALE`·쓰기 실패면 아무것도 지우지 않는다
+  (실측: 모든 커버를 고아로 만들 stale PUT → 409, 커버 전부 남음).
+- 후보는 `Dirent.isFile()`이고 업로드 허용 확장자인 파일뿐이다. 심볼릭 링크·디렉터리·`.admin-tmp-*`는
+  후보가 아니다. 각 경로는 `assertInsideAllowedRoot`를 지나고 실제 위치가 `side-b/` 바로 아래여야 한다.
+- 한 파일의 삭제 실패는 터미널 경고로 남기고 다음 파일로 넘어간다. 저장은 이미 끝났으므로 실패로 만들지 않는다.
+- **업로드 중에는 저장을 막는다.** 후보 목록은 쓰기가 끝난 뒤에 디렉터리를 다시 읽어 만들므로, 저장
+  도중에 도착한 커버는 아무 행도 참조하지 않는 파일로 보여 지워진다(화면 검증 중 발견). 화면은
+  `initDropZone`의 `onStart` 콜백으로 진행 중인 업로드를 세고, 폼 `validate`가 0이 아니면
+  "커버를 올리는 중입니다. 끝난 뒤에 저장하세요."로 거절한다. **서버 쪽 방어는 아직 없다** — 아래 미해결 항목.
+
+### CRITICAL: `quietMusicCoverUploads` — 두 번째 dev 전용 플러그인
+
+`admin/integration.mjs`의 `command === 'dev'` 게이트 안에서 `adminApiPlugin`과 함께 등록된다.
+`apply: 'serve'`이고 훅은 `hotUpdate` 하나뿐이다. 빌드 훅을 추가하지 않는다(§1의 3겹).
+
+- **왜:** `music.ts`가 `import.meta.glob('../assets/side-b/*…')`로 커버를 모은다. 그 폴더에 파일이 생기면
+  Vite의 glob 플러그인이 `music.ts`를 갱신 대상에 넣고, `music.ts`는 서버 전용 모듈이라 Astro
+  (`astro:hmr-reload`)가 **모든 탭에** `full-reload`를 보낸다. 커버를 드롭한 순간 관리자 화면이
+  새로고침되어 방금 추가한 행이 사라졌다(실측: 업로드 직후 Vite ws `{"type":"full-reload"}`).
+- **무엇을:** `type === 'create'`이고 파일이 `side-b/` **바로 아래**일 때만 `[]`를 돌려 갱신 대상을 비운다.
+  `order: 'post'`이며 enforce가 없는 플러그인이라 `enforce: 'post'`인 Astro 훅보다 먼저 돈다.
+  `music.ts` 저장(`update`)과 정리 단계의 삭제(`delete`), 다른 모든 파일 변경은 건드리지 않는다.
+- **관리자 경로에서는 잃는 것이 없다:** 새 커버는 저장 전까지 아무 행도 참조하지 않고, 저장하면
+  `music.ts`가 다시 쓰여 glob이 다시 평가된다(실측: 저장 후 `/side-b`가 새 커버를 이미지 서비스로 렌더).
+- **알려진 가장자리:** 관리자 밖에서 커버가 들어올 때(손 복사, `git pull`) `music.ts`가 **먼저** 바뀌고
+  커버 파일이 **나중에** 도착하면, 그 `create`가 삼켜져 glob이 갱신되지 않는다. dev 사이트는 그 카드를
+  대체 커버로 그린 채, `music.ts`가 다시 바뀌거나 dev 서버를 재시작할 때까지 남는다. 빌드에는 영향이
+  없다(플러그인이 빌드에 등록되지 않는다). `ADMIN_DISABLED=1`이면 플러그인도 없으므로 이 가장자리도 없다.
+- 같은 원인의 전체 새로고침이 `/admin/profile`의 프로필 사진 업로드(`profile.ts`가 `profile.*`를 glob)에도
+  있을 것으로 보이나 **측정하지 않았다.**
+
+### 곁다리로 고친 것 — `admin/client/repeatable.ts`
+
+`uniquifyIds`가 복제한 행 안의 모든 `[id]`를 바꾸면서 astro-icon의 `<symbol id="ai:lucide:…">`까지
+바꿔, 짝인 `<use href="#ai:lucide:…">`가 빈 곳을 가리켰다. 그래서 **반복 행마다 이동·삭제 아이콘과
+필드 오류 아이콘이 비어 보였다** — Side B만이 아니라 `/admin/profile`도 같았다(DOM으로 확인).
+`uniquifyIds`가 `SVGElement`를 건너뛰게 했고 두 화면에서 아이콘이 나오는 것을 확인했다.
+
+### 검증 (실측)
+
+- 서버(`scratchpad` 스크립트, 새로 띄운 dev 서버에서 2회 동일): 업로드 → `side-b/` 생성 · 빈 제목 행
+  제거와 trim·장르 병합·`album` 제거 · `open.spotify.com/x` → `https://…` · `javascript:` → 422
+  (파일·mtime 무변화) · `note.en` 141자 → 422 · 연도와 이유 동시 오류 → `detail.issues` 2건 · 없는
+  커버·`../profile.jpg` → 422 · 커버 교체 → 옛 파일만 삭제 · stale → 409, 삭제 0건 · 빌드 가드 통과.
+- 화면(헤드리스 크로미움, CDP, 실제 마우스 클릭): 드롭 → 썸네일, 저장 → 재오픈 변경 0건, 빈 제목 행 소멸,
+  `javascript:` 링크 오류가 해당 행 칸에만, 장르 제안, 종류 앨범 → 앨범 칸 숨김, 사이드바 활성 표시,
+  1.5초 지연 업로드 중 저장 거절, 콘솔 오류 0건.
+
+### 미해결 (최종 리뷰 대기)
+
+삭제 안전성 관련 3건은 리뷰에서 **최종 리뷰 우선 항목**으로 미뤄 둔 상태이며 이 문서 시점에 고치지 않았다.
+
+1. 저장이 진행 중일 때 도착한 업로드가 정리 단계에서 지워질 수 있다 — 후보를 쓰기 **전** 스냅숏으로
+   한정해야 한다(`music.mjs`의 `removeUnreferencedCovers`). 화면의 업로드 중 저장 차단은 같은 탭 안만 막는다.
+2. `side-b/` 자체가 심볼릭 링크·정션이면 삭제 범위가 넓어질 수 있다.
+3. 문자열이 아닌 `cover`·`year`·`title`·`genres`가 조용히 빈 값으로 바뀐다. 문자열이 아닌 `cover`는
+   참조가 풀려 그 파일이 지워진다.
+
+그 밖의 작은 항목: 대문자 확장자 커버는 업로드·저장은 되나 사이트 glob(소문자만)이 잡지 못한다 ·
+`LocalizedField`에 인라인 오류 칸이 없어 이유 오류는 테두리와 토스트로만 보인다 · 여러 파일을 한 번에
+드롭하면 전부 올라간다(남는 것은 다음 저장 때 정리된다) · 행을 지우면 변경 수가 실제보다 크게 셀 수 있다.
