@@ -44,6 +44,8 @@ export function dirs(projectRoot) {
     projectRoot,
     posts: path.join(projectRoot, 'src', 'content', 'posts'),
     assets: path.join(projectRoot, 'src', 'assets'),
+    // Side B 커버. 관리자만 쓰는 하위 폴더 — 저장 시 미참조 파일을 자동으로 지운다.
+    musicCovers: path.join(projectRoot, 'src', 'assets', 'side-b'),
     config: path.join(projectRoot, 'src', 'config'),
     contentConfig: path.join(projectRoot, 'src', 'content', 'schema.ts'),
   };

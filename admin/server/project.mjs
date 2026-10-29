@@ -46,6 +46,19 @@ export function loadProfile(server) {
 }
 
 /** @param {any} server */
+export function loadMusic(server) {
+  return loadProjectModule(server, '/src/config/music.ts');
+}
+
+/**
+ * Side B 순수 규칙(`genreKey`·`normalizeListenUrl`). 관리자가 다시 구현하지 않는다.
+ * @param {any} server
+ */
+export function loadMusicLib(server) {
+  return loadProjectModule(server, '/src/lib/music.ts');
+}
+
+/** @param {any} server */
 export function loadPostSchema(server) {
   return loadProjectModule(server, '/src/content/schema.ts');
 }

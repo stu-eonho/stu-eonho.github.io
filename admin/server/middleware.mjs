@@ -36,6 +36,9 @@ const ROUTES = [
   ['GET', '/profile', './handlers/profile.mjs', 'readProfile'],
   ['PUT', '/profile', './handlers/profile.mjs', 'writeProfile'],
 
+  ['GET', '/side-b', './handlers/music.mjs', 'readMusic'],
+  ['PUT', '/side-b', './handlers/music.mjs', 'writeMusic'],
+
   ['GET', '/config/site', './handlers/config.mjs', 'readSite'],
   ['PUT', '/config/site', './handlers/config.mjs', 'writeSite'],
   ['GET', '/config/categories', './handlers/config.mjs', 'readCategories'],

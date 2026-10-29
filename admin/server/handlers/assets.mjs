@@ -18,7 +18,7 @@ import { findProfilePhoto } from './profile.mjs';
 /** 상한 8MB. 리사이즈는 하지 않는다 — 원본 그대로 두고 Astro 이미지 파이프라인에 맡긴다. */
 const MAX_BYTES = 8 * 1024 * 1024;
 
-const ALLOWED = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif']);
+export const ALLOWED = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif']);
 
 /**
  * 매직 바이트 → 실제 포맷.
@@ -208,7 +208,10 @@ export async function uploadAsset({ body, projectRoot }) {
     );
   }
 
-  const assetsDir = dirs(projectRoot).assets;
+  // Side B 커버는 하위 폴더 `side-b/`에 둔다. 이 화면(`listAssets`)은 최상위 파일만 보므로
+  // 여기서 커버를 지워 빌드가 죽는 경로가 없다. 정리는 Side B 저장(`music.mjs`)이 맡는다.
+  const assetsDir =
+    purpose === 'music-cover' ? dirs(projectRoot).musicCovers : dirs(projectRoot).assets;
   await ensureDir(assetsDir);
 
   let name;

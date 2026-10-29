@@ -7,6 +7,7 @@
  *   site.ts       → `SITE`         초기자 전체 교체 + `navOrder` 표현식 보존 + `url` 폴백 보존
  *   categories.ts → `CATEGORIES`   초기자 전체 교체 (`as const satisfies` 꼬리는 범위 밖)
  *   i18n.ts       → `ko` / `en`    문자열 리터럴 단위 교체
+ *   music.ts      → `MUSIC`        초기자(배열) 전체 교체
  *
  * CRITICAL: 쓰기 직전 재파싱 검증(0 diagnostics)을 통과해야 디스크에 남는다.
  */
