@@ -14,11 +14,13 @@ import { genreKey, listenService, normalizeListenUrl } from '@/lib/music';
  *   [data-tilt]                        기울기 래퍼. 스크립트가 --tilt-x / --tilt-y만 쓴다
  *   [data-card]                        뒤집기 대상. 뒤집힘 = .is-flipped
  *   [data-face=front] button[data-flip]
- *   [data-face=back] button[data-unflip]   뒷면은 처음에 inert
+ *   [data-face=back] button[data-unflip]   서버 마크업에서는 inert가 없다 — 스크립트가 시작할 때 건다
  *
  * CRITICAL: 앞면 버튼은 면 전체를 덮는 겹침 버튼이다. 커버·제목을 버튼 안에 넣지 않은 이유는
  *   JS가 없을 때 버튼만 숨겨야 하기 때문이다(SideBView의 noscript 스타일).
  * CRITICAL: 숨겨진 면에는 inert를 건다 — 앞면일 때 뒷면 링크로 Tab이 가면 안 된다.
+ *   단 서버 HTML에는 넣지 않는다. inert는 클릭·선택·스크린리더까지 막으므로 JS가 없을 때
+ *   앞면 아래에 펼친 뒷면의 듣기 링크를 쓸 수 없게 된다. 스크립트(side-b.ts)가 시작하면서 건다.
  */
 interface Props {
   entry: MusicEntry;
@@ -115,7 +117,6 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
         data-face="back"
         role="group"
         aria-label={[title, artist].filter(Boolean).join(' — ')}
-        inert
       >
         {
           visibleGenres.length > 0 && (
