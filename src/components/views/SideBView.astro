@@ -1,0 +1,107 @@
+---
+import ListLayout from '@/layouts/ListLayout.astro';
+import ListHeader from '@/components/post/ListHeader.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import GenreFilter from '@/components/side-b/GenreFilter.astro';
+import MusicCard from '@/components/side-b/MusicCard.astro';
+import { MUSIC } from '@/config/music';
+import { collectGenres } from '@/lib/music';
+import { i18n } from '@/config/i18n';
+
+/**
+ * `/side-b`와 `/en/side-b`가 공유하는 본문.
+ *
+ * CRITICAL: data-pagefind-body를 붙이지 않는다 — Side B는 사이트 검색에 노출하지 않는다.
+ * CRITICAL: 제목이 빈 항목은 화면에서 버린다(관리자 저장에서도 버린다).
+ */
+const { t } = i18n(Astro.url);
+
+const entries = MUSIC.map((entry, index) => ({ entry, index })).filter(
+  ({ entry }) => entry.title.trim() !== '',
+);
+const genres = collectGenres(entries.map(({ entry }) => entry.genres));
+// 장르가 없거나 카드가 1장이면 거를 것이 없다
+const showFilter = genres.length > 0 && entries.length >= 2;
+---
+
+<ListLayout path="/side-b" title={t.sideB.title} description={t.sideB.description}>
+  <ListHeader title={t.sideB.title} subtitle={t.sideB.description} />
+
+  {
+    entries.length > 0 ? (
+      <div class="side-b" data-side-b>
+        {showFilter && <GenreFilter genres={genres} total={entries.length} />}
+
+        <ul class="music-grid" data-reveal-group>
+          {entries.map(({ entry, index }, position) => (
+            <MusicCard entry={entry} index={index} eager={position < 3} />
+          ))}
+        </ul>
+      </div>
+    ) : (
+      <EmptyState icon="lucide:disc-3" title={t.sideB.emptyTitle} />
+    )
+  }
+
+  {
+    /*
+      JS가 없을 때: 누를 수 없는 필터와 뒤집기 버튼을 숨기고, 뒷면을 앞면 아래에 펼친다.
+      JS 사용자에게는 이 스타일이 존재하지 않으므로 전환 깜빡임이 생기지 않는다.
+      is:inline — Astro가 이 스타일을 끌어올려 항상 적용하지 않게 한다.
+      선택자가 [data-side-b] 아래로 한정되므로 빈 상태에서는 아무것도 잡지 않는다.
+    */
+  }
+  <noscript>
+    <style is:inline>
+      [data-side-b] [data-genre-filter] {
+        display: none;
+      }
+      [data-side-b] [data-tilt],
+      [data-side-b] [data-card] {
+        transform: none !important;
+        transform-style: flat;
+      }
+      [data-side-b] [data-card] {
+        aspect-ratio: auto;
+      }
+      [data-side-b] [data-face] {
+        position: relative;
+        transform: none !important;
+        visibility: visible !important;
+        backface-visibility: visible;
+        -webkit-backface-visibility: visible;
+      }
+      [data-side-b] [data-face='front'] {
+        aspect-ratio: 1;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      [data-side-b] [data-face='back'] {
+        overflow: visible;
+        border-top: 0;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+      [data-side-b] [data-flip],
+      [data-side-b] [data-unflip] {
+        display: none;
+      }
+      /* 장르·이유·링크가 모두 없는 뒷면은 버튼만 남아 빈 띠가 되므로 접는다 */
+      [data-side-b] [data-face='back']:not(:has(li, p, a)) {
+        display: none;
+      }
+      [data-side-b] [data-face='front']:has(+ [data-face='back']:not(:has(li, p, a))) {
+        border-radius: var(--radius-card);
+      }
+    </style>
+  </noscript>
+</ListLayout>
+
+<style>
+  .music-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--spacing-content); /* .card-grid와 같은 간격 */
+    list-style: none;
+  }
+</style>

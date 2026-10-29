@@ -178,6 +178,15 @@
   --focus-ring: var(--color-apple-primary); /* [local extension] */
   --content-image-filter: none; /* [local extension] 다크에서만 값이 바뀐다 */
 
+  /* [local extension] Side B 커버 위 글자와 스크림.
+     커버 사진은 테마를 따르지 않으므로 다크에서도 값을 바꾸지 않는다. 스크림 농도는
+     순백 커버 위에서도 AA가 나오도록 잡았다 — 글자 시작점이 0.62 검정이면 배경이 #616161이
+     되어 흰 글자 6.2:1, 0.85 흰 글자 5.0:1이다. */
+  --cover-scrim: rgb(0 0 0 / 0.62);
+  --cover-scrim-strong: rgb(0 0 0 / 0.78);
+  --on-cover: var(--color-apple-on-primary);
+  --on-cover-muted: rgb(255 255 255 / 0.85);
+
   /* 레이아웃 [local extension] */
   --container-max: 1120px;
   --prose-max: 720px;

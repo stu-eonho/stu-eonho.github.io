@@ -1,0 +1,126 @@
+---
+import { i18n } from '@/config/i18n';
+import type { GenreOption } from '@/lib/music';
+
+/**
+ * Side B 장르 필터 줄. 맨 앞은 "전체"이고 처음에는 그것이 눌린 상태다.
+ *
+ * DOM 계약 — `src/scripts/side-b.ts`가 이 이름에 기댄다. 바꾸지 않는다.
+ *   [data-genre-filter]                묶음 (role="group")
+ *   button[data-genre-key]             칩. "전체"는 빈 문자열, aria-pressed로 상태를 낸다
+ *   [data-status]                      칩을 골랐을 때 라이브 영역에 넣을 완성 문장
+ *   [data-filter-status]               aria-live="polite" 영역
+ *
+ * CRITICAL: 서버에서 그려 둔다. 스크립트가 나중에 끼워 넣으면 그리드가 밀린다.
+ *   JS가 없을 때는 SideBView의 noscript 스타일이 숨긴다.
+ */
+interface Props {
+  genres: GenreOption[];
+  /** 전체 카드 수 */
+  total: number;
+}
+
+const { genres, total } = Astro.props;
+const { t } = i18n(Astro.url);
+
+const chips = [
+  { key: '', label: t.sideB.all, count: total },
+  ...genres.map((genre) => ({ key: genre.key, label: genre.label, count: genre.count })),
+];
+---
+
+<div class="genre-filter" data-genre-filter role="group" aria-label={t.sideB.filterLabel}>
+  {
+    chips.map((chip) => (
+      <button
+        type="button"
+        class="genre-chip"
+        data-genre-key={chip.key}
+        data-status={t.sideB.resultCount(chip.label, chip.count)}
+        aria-pressed={chip.key === '' ? 'true' : 'false'}
+      >
+        <span class="pill">{chip.label}</span>
+      </button>
+    ))
+  }
+</div>
+<p class="visually-hidden" data-filter-status aria-live="polite"></p>
+
+<style>
+  .genre-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--spacing-ext-2);
+    margin-bottom: var(--spacing-ext-6);
+  }
+
+  /* 640px 미만: 한 줄로 두고 가로로 스크롤한다. 칩이 여러 줄이 되면 첫 카드가 화면 밖으로
+     밀린다. 컨테이너 여백까지 넓혀 줄 끝이 화면 가장자리에서 잘려 보이게 한다 —
+     잘린 칩이 "더 있다"는 신호다. */
+  @media (max-width: 639px) {
+    .genre-filter {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-inline: -22px; /* .container 모바일 패딩 */
+      padding-inline: 22px;
+      scrollbar-width: none;
+    }
+
+    .genre-filter::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* 버튼은 44px 히트 영역이고 보이는 알약은 32px이다(Badge chip과 같은 크기) */
+  .genre-chip {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-pill); /* [verified] */
+    background: var(--chip-fill);
+    color: var(--fg);
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-micro) var(--ease-standard),
+      color var(--duration-micro) var(--ease-standard);
+  }
+
+  .genre-chip:hover .pill {
+    background: var(--hairline-hover);
+  }
+
+  /* 눌린 칩 — 채움 버튼과 같은 색. CRITICAL: --link를 채움 배경으로 쓰지 않는다 */
+  .genre-chip[aria-pressed='true'] .pill {
+    background: var(--accent);
+    color: var(--accent-on);
+  }
+
+  .genre-chip[aria-pressed='true']:hover .pill {
+    background: var(--accent-hover);
+  }
+
+  /* 링은 보이는 알약에 그린다 — 44px 버튼 상자에 그리면 칩보다 크게 떠 보인다 */
+  .genre-chip:focus-visible {
+    outline: none;
+  }
+
+  .genre-chip:focus-visible .pill {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+</style>

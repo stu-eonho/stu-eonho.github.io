@@ -1,0 +1,408 @@
+---
+import { Image } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
+import Badge from '@/components/ui/Badge.astro';
+import { DEFAULT_LANG, i18n, otherLang, text, type MaybeLocalized } from '@/config/i18n';
+import { musicCover, type MusicEntry } from '@/config/music';
+import { genreKey, listenService, normalizeListenUrl } from '@/lib/music';
+
+/**
+ * Side B 카드 한 장. 정사각형이며 앞면은 커버·종류·제목·가수, 뒷면은 장르·이유·듣기 링크다.
+ *
+ * DOM 계약 — `src/scripts/side-b.ts`가 이 이름에 기댄다. 바꾸지 않는다.
+ *   li[data-music-item][data-genres]   필터 대상. data-genres는 genreKey 배열의 JSON
+ *   [data-tilt]                        기울기 래퍼. 스크립트가 --tilt-x / --tilt-y만 쓴다
+ *   [data-card]                        뒤집기 대상. 뒤집힘 = .is-flipped
+ *   [data-face=front] button[data-flip]
+ *   [data-face=back] button[data-unflip]   뒷면은 처음에 inert
+ *
+ * CRITICAL: 앞면 버튼은 면 전체를 덮는 겹침 버튼이다. 커버·제목을 버튼 안에 넣지 않은 이유는
+ *   JS가 없을 때 버튼만 숨겨야 하기 때문이다(SideBView의 noscript 스타일).
+ * CRITICAL: 숨겨진 면에는 inert를 건다 — 앞면일 때 뒷면 링크로 Tab이 가면 안 된다.
+ */
+interface Props {
+  entry: MusicEntry;
+  /** `MUSIC` 안의 위치 — 경고 문구용 */
+  index: number;
+  /** 첫 줄 카드는 eager로 받는다 */
+  eager?: boolean;
+}
+
+const { entry, index, eager = false } = Astro.props;
+const { lang, t } = i18n(Astro.url);
+
+/** 현재 언어 → 다른 언어 → 생략. CourseList의 규칙과 같다. */
+const pick = (value: MaybeLocalized | undefined): string | undefined =>
+  (text(value, lang) || text(value, otherLang(lang)) || '').trim() || undefined;
+
+const title = entry.title.trim();
+const artist = entry.artist.trim();
+const album = entry.kind === 'song' ? entry.album?.trim() : undefined;
+const kindLine = [t.sideB.kind[entry.kind], entry.year?.trim()].filter(Boolean).join(' · ');
+const artistLine = [artist, album].filter(Boolean).join(' · ');
+
+const cover = musicCover(entry.cover);
+// 언어마다 한 번씩 나오면 같은 경고가 두 번 찍히므로 기본 언어 빌드에서만 낸다.
+// 커버를 적지 않은 항목은 의도된 대체 커버라 경고하지 않는다.
+if (entry.cover && !cover && lang === DEFAULT_LANG) {
+  console.warn(
+    `[side-b] MUSIC[${index}].cover "${entry.cover}"를 src/assets/side-b/에서 찾지 못해 대체 커버를 그립니다`,
+  );
+}
+const initial = Array.from(title)[0]?.toUpperCase() ?? '';
+
+// 같은 카드 안의 중복 장르(대소문자·공백 차이)는 하나로 본다. 필터 키도 같은 규칙이다.
+const genres: { key: string; label: string }[] = [];
+for (const name of entry.genres) {
+  const key = genreKey(name);
+  if (key && !genres.some((genre) => genre.key === key)) genres.push({ key, label: name.trim() });
+}
+/** 뒷면은 정사각형이라 칩을 3개까지만 보인다. 전체 장르는 필터에 다 반영된다 */
+const visibleGenres = genres.slice(0, 3);
+
+const note = pick(entry.note);
+
+// 손으로 고친 값도 안전하게 — 스킴이 없으면 https를 붙이고 http(s)가 아니면 링크를 만들지 않는다.
+const listenHref = entry.listenUrl ? normalizeListenUrl(entry.listenUrl) : undefined;
+if (listenHref === null && lang === DEFAULT_LANG) {
+  console.warn(
+    `[side-b] MUSIC[${index}].listenUrl "${entry.listenUrl}"이 http(s) 주소가 아니어서 듣기 링크를 생략합니다`,
+  );
+}
+const service = listenHref ? listenService(listenHref) : null;
+const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.sideB.listen;
+---
+
+<li
+  class="music-item"
+  data-music-item
+  data-genres={JSON.stringify(genres.map((genre) => genre.key))}
+  data-reveal
+>
+  <div class="tilt" data-tilt>
+    <div class="card" data-card>
+      <div class="face front" data-face="front">
+        {
+          cover ? (
+            <div class="cover">
+              <Image
+                src={cover}
+                alt=""
+                widths={[360, 720, 1080]}
+                sizes="(min-width: 1120px) 350px, (min-width: 640px) 50vw, 100vw"
+                loading={eager ? 'eager' : 'lazy'}
+              />
+            </div>
+          ) : (
+            <div class="cover cover-fallback" aria-hidden="true">
+              <span class="initial">{initial}</span>
+            </div>
+          )
+        }
+
+        <div class="meta">
+          <p class="kind">{kindLine}</p>
+          <h2 class="title">{title}</h2>
+          {artistLine && <p class="artist">{artistLine}</p>}
+        </div>
+
+        <button type="button" class="flip" data-flip aria-label={t.sideB.cardLabel(title, artist)}
+        ></button>
+      </div>
+
+      <div
+        class="face back"
+        data-face="back"
+        role="group"
+        aria-label={[title, artist].filter(Boolean).join(' — ')}
+        inert
+      >
+        {
+          visibleGenres.length > 0 && (
+            <ul class="chips">
+              {visibleGenres.map((genre) => (
+                <li>
+                  <Badge tone="accent">{genre.label}</Badge>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        {note && <p class="note">{note}</p>}
+
+        <div class="back-foot">
+          {
+            listenHref && (
+              <a class="listen" href={listenHref} target="_blank" rel="noopener noreferrer">
+                {listenLabel}
+                <Icon name="lucide:arrow-up-right" class="listen-icon" aria-hidden="true" />
+              </a>
+            )
+          }
+          <button type="button" class="unflip" data-unflip>
+            <Icon name="lucide:rotate-ccw" class="unflip-icon" aria-hidden="true" />
+            {t.sideB.flipBack}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</li>
+
+<style>
+  /* 원근은 기울기 래퍼의 부모에 둔다 — 래퍼와 카드가 preserve-3d로 같은 3D 공간을 쓴다 */
+  .music-item {
+    perspective: 900px;
+  }
+
+  /*
+    기울기. 스크립트는 --tilt-x / --tilt-y만 쓴다(최대 6°).
+    뒤집기(.card)와 다른 요소에 두어 두 변형이 서로 덮어쓰지 않는다.
+  */
+  .tilt {
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+  }
+
+  /* 기울기는 마우스가 있는 환경에서만 쓴다. 휴대폰에서는 뒤집기만 한다 */
+  @media (hover: hover) and (pointer: fine) {
+    .tilt {
+      transition: transform 0.25s ease-out;
+    }
+  }
+
+  /* 오른쪽 아래 모서리가 들려 왼쪽 위로 넘어간다 */
+  .card {
+    position: relative;
+    aspect-ratio: 1;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .card.is-flipped {
+    transform: rotate3d(1, -1, 0, 180deg);
+  }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card); /* [verified] 18px */
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* ---------- 앞면 ---------- */
+
+  .cover {
+    position: absolute;
+    inset: 0;
+  }
+
+  .cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 대체 커버 — 토큰 배경에 제목 첫 글자. 아래쪽은 스크림이 덮으므로 글자를 조금 올린다 */
+  .cover-fallback {
+    display: grid;
+    place-items: center;
+    padding-bottom: 25%;
+    background: var(--accent-tint);
+  }
+
+  .initial {
+    font-family: var(--font-display);
+    font-size: 96px;
+    line-height: 1;
+    font-weight: 600;
+    color: var(--link);
+  }
+
+  .meta {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--spacing-ext-7) var(--spacing-ext-4) var(--spacing-ext-3);
+    /* 글자가 시작하는 32px 지점부터 이미 충분히 어둡다 — 밝은 커버에서도 AA */
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--cover-scrim) var(--spacing-ext-7),
+      var(--cover-scrim-strong)
+    );
+    color: var(--on-cover);
+  }
+
+  .kind,
+  .artist {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    color: var(--on-cover-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .title {
+    font-size: var(--text-body);
+    line-height: 1.25;
+    letter-spacing: var(--text-body--letter-spacing);
+    font-weight: 600;
+    color: var(--on-cover);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 면 전체를 덮는 뒤집기 버튼 */
+  .flip {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  /*
+    면이 overflow: hidden이라 버튼 바깥 포커스 링이 잘린다. 링은 면에 그린다.
+    :has()를 모르는 브라우저는 버튼 안쪽에 링을 그린다.
+  */
+  .flip:focus-visible {
+    outline-offset: -4px;
+  }
+
+  @supports selector(:has(*)) {
+    .flip:focus-visible {
+      outline: none;
+    }
+
+    .front:has(.flip:focus-visible) {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ---------- 뒷면 ---------- */
+
+  .back {
+    transform: rotate3d(1, -1, 0, 180deg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-ext-2);
+    padding: var(--spacing-ext-4);
+    color: var(--fg);
+    /* 안전장치 — 140자·칩 3개·260px 카드에서는 스크롤이 생기지 않아야 한다 */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-ext-1);
+    list-style: none;
+  }
+
+  .note {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  .back-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-ext-3);
+    margin-top: auto;
+    padding-top: var(--spacing-ext-1);
+  }
+
+  .listen,
+  .unflip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-ext-1);
+    text-decoration: none;
+  }
+
+  /* 최소 히트 영역 44px (WCAG 2.5.8) — 글자는 작게 두고 누르는 영역만 넓힌다 */
+  .listen::after,
+  .unflip::after {
+    content: '';
+    position: absolute;
+    inset: -13px -6px;
+  }
+
+  .listen {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    color: var(--link);
+  }
+
+  .listen:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .unflip {
+    margin-left: auto;
+    border: 0;
+    padding: 0;
+    background: none;
+    font-size: var(--text-caption);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: color var(--duration-micro) var(--ease-standard);
+  }
+
+  .unflip:hover {
+    color: var(--fg);
+  }
+
+  .listen :global(.listen-icon),
+  .unflip :global(.unflip-icon) {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  /*
+    모션 줄이기: 기울기 없음, 뒤집기는 회전 없이 즉시 면이 바뀐다.
+    회전을 빼면 backface-visibility가 면을 가려 주지 않으므로 visibility로 바꾼다.
+  */
+  @media (prefers-reduced-motion: reduce) {
+    .tilt,
+    .card,
+    .card.is-flipped,
+    .back {
+      transform: none;
+      transition: none;
+    }
+
+    .back,
+    .card.is-flipped .front {
+      visibility: hidden;
+    }
+
+    .card.is-flipped .back {
+      visibility: visible;
+    }
+  }
+</style>
