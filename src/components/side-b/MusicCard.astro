@@ -194,9 +194,20 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
     transform: rotate3d(1, -1, 0, 180deg);
   }
 
+  /*
+    눌림은 면만 받는다. 기울어진 채 뒤집혀 있으면 뒷면과 .card 자신의 평면이 겹쳐(둘 다 z=0)
+    3D 깊이 정렬에서 .card가 이기는 자리가 생긴다 — 뒷면의 약 30%가 .card로 잡혔고, 포인터
+    위치에 따라 듣기 링크 한가운데도 눌리지 않았다(실측). 래퍼 둘을 눌림 대상에서 뺀다.
+  */
+  .tilt,
+  .card {
+    pointer-events: none;
+  }
+
   .face {
     position: absolute;
     inset: 0;
+    pointer-events: auto; /* 위 주석 — 눌림은 면만 받는다 */
     background: var(--surface);
     border: 1px solid var(--hairline);
     border-radius: var(--radius-card); /* [verified] 18px */
@@ -461,6 +472,16 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
 
     .card.is-flipped .back {
       visibility: visible;
+    }
+
+    /*
+      면 안에서는 전환을 아예 끈다. global.css의 reduced-motion 규칙이 모든 요소에 0.01ms
+      전환을 걸어서, 면 안의 요소가 물려받은 visibility가 그 순간 hidden으로 보간된다.
+      그러면 side-b.ts가 뒤집은 직후 반대 면 버튼에 건 focus()가 실패한다(실측).
+    */
+    .face,
+    .face * {
+      transition-property: none;
     }
   }
 </style>

@@ -88,6 +88,14 @@ const showFilter = genres.length > 0 && entries.length >= 2;
       }
     </style>
   </noscript>
+
+  <script>
+    // 뒤집기·기울기·장르 필터. 이 페이지에만 실린다(다른 페이지 번들 0바이트).
+    import { initSideB } from '@/scripts/side-b';
+
+    const root = document.querySelector<HTMLElement>('[data-side-b]');
+    if (root) initSideB(root);
+  </script>
 </ListLayout>
 
 <style>
@@ -96,5 +104,23 @@ const showFilter = genres.length > 0 && entries.length >= 2;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: var(--spacing-content); /* .card-grid와 같은 간격 */
     list-style: none;
+  }
+
+  /* 필터로 다시 보이는 카드의 짧은 페이드. side-b.ts가 [data-tilt]에 붙이고 animationend에 뗀다.
+     li가 아니라 안쪽 래퍼인 이유는 side-b.ts 머리 주석 참조(진입 리빌과 겹치지 않게). */
+  .music-grid :global(.is-filter-in) {
+    animation: side-b-filter-in var(--duration-sheet) var(--ease-standard);
+  }
+
+  @keyframes side-b-filter-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .music-grid :global(.is-filter-in) {
+      animation: none;
+    }
   }
 </style>
