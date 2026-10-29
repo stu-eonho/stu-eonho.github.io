@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import { SITE, GOATCOUNTER_CODE } from '@/config/site';
 import { PROFILE, isPlaceholder, socialHref, type SocialType } from '@/config/profile';
+import { MUSIC } from '@/config/music';
 import { i18n, text } from '@/config/i18n';
 
 /** 소셜 타입 → lucide 아이콘 매핑. 목록에 없는 값은 homepage 아이콘으로 떨어진다. */
@@ -40,6 +41,13 @@ const year = new Date().getFullYear();
             <Icon name={SOCIAL_ICON[link.type] ?? SOCIAL_ICON.homepage} aria-hidden="true" />
           </a>
         ))
+      }
+      {
+        MUSIC.length > 0 && (
+          <a class="icon-button" href={href('/side-b')} aria-label={t.sideB.linkLabel}>
+            <Icon name="lucide:disc-3" aria-hidden="true" />
+          </a>
+        )
       }
       <a class="icon-button" href={href('/rss.xml')} aria-label={t.footer.rss}>
         <Icon name="lucide:rss" aria-hidden="true" />

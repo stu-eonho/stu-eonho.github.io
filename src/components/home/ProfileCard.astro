@@ -10,6 +10,7 @@ import SkillGroups from './SkillGroups.astro';
 import InterestList from './InterestList.astro';
 import CourseList from './CourseList.astro';
 import { PROFILE, PROFILE_PHOTO, isPlaceholder, socialHref, type SocialType } from '@/config/profile';
+import { MUSIC } from '@/config/music';
 import { i18n, text } from '@/config/i18n';
 
 /**
@@ -33,7 +34,9 @@ const SOCIAL_ICON: Record<SocialType, string> = {
   homepage: 'lucide:globe',
 };
 
-const { lang, t } = i18n(Astro.url);
+const { lang, t, href } = i18n(Astro.url);
+// Side B 진입 링크 — 음악 목록이 비면 페이지로 가는 길도 없다.
+const showSideB = MUSIC.length > 0;
 
 const name = text(PROFILE.name, lang);
 const initial = isPlaceholder(name) ? '?' : name.trim().charAt(0);
@@ -120,7 +123,7 @@ const hasCvBody =
       </ul>
 
       {
-        (links.length > 0 || cvUrl) && (
+        (links.length > 0 || showSideB || cvUrl) && (
           <div class="actions">
             <ul class="socials">
               {links.map((link) => (
@@ -139,6 +142,13 @@ const hasCvBody =
                   </a>
                 </li>
               ))}
+              {showSideB && (
+                <li>
+                  <a class="social-link" href={href('/side-b')} aria-label={t.sideB.linkLabel}>
+                    <Icon name="lucide:disc-3" aria-hidden="true" />
+                  </a>
+                </li>
+              )}
             </ul>
             {cvUrl && (
               <Button variant="compact-outline" href={cvUrl}>
