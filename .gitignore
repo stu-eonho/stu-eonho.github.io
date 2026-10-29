@@ -16,3 +16,4 @@ npm-debug.log*
 Thumbs.db
 
 # 오케스트레이션 산출물은 보존한다 (_workspace/)
+.superpowers/
