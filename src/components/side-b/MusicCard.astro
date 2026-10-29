@@ -40,8 +40,10 @@ const pick = (value: MaybeLocalized | undefined): string | undefined =>
 const title = entry.title.trim();
 const artist = entry.artist.trim();
 const album = entry.kind === 'song' ? entry.album?.trim() : undefined;
-const kindLine = [t.sideB.kind[entry.kind], entry.year?.trim()].filter(Boolean).join(' · ');
-const artistLine = [artist, album].filter(Boolean).join(' · ');
+// 앞면은 종류·제목·가수만 쓴다(스펙 §3). 수록 앨범·연도는 뒷면 머리 줄로 간다.
+const backMeta = [artist, album, entry.year?.trim()].filter(Boolean).join(' · ');
+/** 뒷면 묶음의 이름표. 페이지 안에서 MUSIC 위치는 하나뿐이므로 id가 겹치지 않는다 */
+const backTitleId = `side-b-${index}-title`;
 
 const cover = musicCover(entry.cover);
 // 언어마다 한 번씩 나오면 같은 경고가 두 번 찍히므로 기본 언어 빌드에서만 낸다.
@@ -103,27 +105,29 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
         }
 
         <div class="meta">
-          <p class="kind">{kindLine}</p>
+          <p class="kind">{t.sideB.kind[entry.kind]}</p>
           <h2 class="title">{title}</h2>
-          {artistLine && <p class="artist">{artistLine}</p>}
+          {artist && <p class="artist">{artist}</p>}
         </div>
 
         <button type="button" class="flip" data-flip aria-label={t.sideB.cardLabel(title, artist)}
         ></button>
       </div>
 
-      <div
-        class="face back"
-        data-face="back"
-        role="group"
-        aria-label={[title, artist].filter(Boolean).join(' — ')}
-      >
+      <div class="face back" data-face="back" role="group" aria-labelledby={backTitleId}>
+        <div class="back-head">
+          <p class="back-title" id={backTitleId}>{title}</p>
+          {backMeta && <p class="back-meta">{backMeta}</p>}
+        </div>
+
         {
           visibleGenres.length > 0 && (
             <ul class="chips">
               {visibleGenres.map((genre) => (
                 <li>
-                  <Badge tone="accent">{genre.label}</Badge>
+                  <Badge tone="accent">
+                    <span class="chip-label">{genre.label}</span>
+                  </Badge>
                 </li>
               ))}
             </ul>
@@ -141,9 +145,14 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
               </a>
             )
           }
-          <button type="button" class="unflip" data-unflip>
+          <button
+            type="button"
+            class="unflip"
+            data-unflip
+            aria-label={t.sideB.flipBack}
+            title={t.sideB.flipBack}
+          >
             <Icon name="lucide:rotate-ccw" class="unflip-icon" aria-hidden="true" />
-            {t.sideB.flipBack}
           </button>
         </div>
       </div>
@@ -301,18 +310,61 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
     display: flex;
     flex-direction: column;
     gap: var(--spacing-ext-2);
-    padding: var(--spacing-ext-4);
+    /* 아래만 16px — 바닥 줄의 44px 히트 영역이 위아래로 13px 나오므로, 12px이면 면 밖으로
+       1px 넘쳐 스크롤이 생긴다 */
+    padding: var(--spacing-ext-3) var(--spacing-ext-3) var(--spacing-ext-4);
     color: var(--fg);
-    /* 안전장치 — 140자·칩 3개·260px 카드에서는 스크롤이 생기지 않아야 한다 */
+    /*
+      안전장치 — 260px 카드에서 머리 줄 + 칩 3개 + 한국어 140자 + 듣기 링크가 스크롤 없이
+      들어가야 한다(Pretendard 실측 내용 높이 ko 236 · en 200 / 258px). 그 예산을 지키려고 머리 줄·칩 줄·바닥 줄을
+      모두 한 줄로 묶는다.
+    */
     overflow-y: auto;
     overscroll-behavior: contain;
   }
 
+  /* 머리 줄은 한 줄씩으로 높이를 묶는다 — 긴 제목 전체는 앞면에 두 줄까지 보인다 */
+  .back-title,
+  .back-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .back-title {
+    font-size: var(--text-small);
+    line-height: var(--text-small--line-height);
+    letter-spacing: var(--text-small--letter-spacing);
+    font-weight: 600;
+  }
+
+  .back-meta {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    color: var(--fg-muted);
+  }
+
+  /* 칩은 한 줄. 넘치면 칩이 줄고 이름이 말줄임된다 — 전체 장르 이름은 필터 줄에 있다 */
   .chips {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--spacing-ext-1);
     list-style: none;
+  }
+
+  .chips > li {
+    display: flex;
+    min-width: 0;
+  }
+
+  .chips :global(.badge) {
+    min-width: 0;
+  }
+
+  .chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .note {
@@ -328,7 +380,6 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
     align-items: center;
     gap: var(--spacing-ext-3);
     margin-top: auto;
-    padding-top: var(--spacing-ext-1);
   }
 
   .listen,
@@ -360,17 +411,23 @@ const listenLabel = service ? t.sideB.listenOn(t.sideB.services[service]) : t.si
     text-underline-offset: 2px;
   }
 
+  /* 아이콘 버튼. 보이는 크기는 18px, ::after로 44px 히트 영역 */
   .unflip {
+    justify-content: center;
+    width: 18px;
+    height: 18px;
     margin-left: auto;
     border: 0;
     padding: 0;
     background: none;
-    font-size: var(--text-caption);
-    line-height: var(--text-small--line-height);
-    letter-spacing: var(--text-caption--letter-spacing);
     color: var(--fg-muted);
     cursor: pointer;
     transition: color var(--duration-micro) var(--ease-standard);
+  }
+
+  /* 오른쪽은 면 패딩(12px)까지만 — 넘치면 가로 스크롤이 생긴다. 왼쪽을 그만큼 더 넓힌다 */
+  .unflip::after {
+    inset: -13px -12px -13px -14px;
   }
 
   .unflip:hover {

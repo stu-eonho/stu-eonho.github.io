@@ -86,13 +86,6 @@ const showFilter = genres.length > 0 && entries.length >= 2;
       [data-side-b] [data-unflip] {
         display: none;
       }
-      /* 장르·이유·링크가 모두 없는 뒷면은 버튼만 남아 빈 띠가 되므로 접는다 */
-      [data-side-b] [data-face='back']:not(:has(li, p, a)) {
-        display: none;
-      }
-      [data-side-b] [data-face='front']:has(+ [data-face='back']:not(:has(li, p, a))) {
-        border-radius: var(--radius-card);
-      }
     </style>
   </noscript>
 </ListLayout>
