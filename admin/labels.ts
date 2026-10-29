@@ -25,6 +25,7 @@ export const L = {
     posts: '글',
     editor: '글 편집기',
     profile: '프로필',
+    sideB: 'Side B',
     settings: '설정',
     strings: 'UI 문자열',
     tags: '태그',
@@ -272,6 +273,50 @@ export const L = {
     viewHome: '홈에서 확인',
     commentNotice:
       'PROFILE 선언 안의 줄 주석은 저장 시 사라집니다. 같은 설명이 파일 상단 인터페이스의 JSDoc에 남아 있습니다.',
+  },
+
+  sideB: {
+    list: '곡·앨범',
+    intro:
+      '사이트 /side-b 화면의 카드입니다. 위에서 아래 순서가 화면 순서입니다. 제목이 빈 행은 저장할 때 버려집니다.',
+    add: '곡·앨범 추가',
+    empty: '목록이 비면 Side B 화면은 빈 상태 안내만 보여 주고, 홈·푸터의 진입 링크가 숨습니다',
+    viewPage: 'Side B 보기',
+    kind: '종류',
+    kindSong: '노래',
+    kindAlbum: '앨범',
+    title: '제목',
+    artist: '가수',
+    album: '앨범 (선택)',
+    albumHint: '노래일 때만 저장됩니다',
+    year: '연도 (선택)',
+    yearHint: '네 자리 숫자 (예: 2024)',
+    cover: '커버 (선택)',
+    coverDrop: '커버 이미지를 놓거나 클릭해 고르세요',
+    coverHint: '정사각형 권장. 비우면 사이트가 대체 커버를 그립니다.',
+    coverReplace: '바꾸기',
+    coverClear: '지우기',
+    coverAlt: (name: string) => `커버: ${name}`,
+    coverMissing: (name: string) => `파일을 찾을 수 없습니다: ${name}`,
+    coverUploaded: (name: string) => `커버를 올렸습니다: ${name}`,
+    coverUploading: '커버를 올리는 중입니다. 끝난 뒤에 저장하세요.',
+    genres: '장르 (Enter로 추가)',
+    genresHint:
+      '이미 쓴 장르가 제안됩니다. 대소문자·앞뒤 공백만 다른 표기는 같은 장르로 합쳐집니다.',
+    note: '좋아하는 이유 (선택)',
+    noteHint: '언어별 최대 140자. 카드 뒷면에 나옵니다.',
+    listenUrl: '듣기 링크 (선택)',
+    listenHint:
+      '주소만 적어도 됩니다 — 저장할 때 https://를 붙입니다. http(s)가 아닌 주소는 저장되지 않습니다.',
+    /** 링크 칸 옆 판정 결과. `src/lib/music.ts`의 `ListenService` 키와 같아야 한다 */
+    services: {
+      youtube: 'YouTube',
+      'youtube-music': 'YouTube Music',
+      spotify: 'Spotify',
+      'apple-music': 'Apple Music',
+      melon: 'Melon',
+    },
+    removedCovers: (n: number) => `쓰지 않는 커버 파일 ${n}개를 정리했습니다`,
   },
 
   settings: {

@@ -42,9 +42,12 @@ function readAsBase64(file: File): Promise<string> {
   });
 }
 
+/** 저장 위치. `music-cover`는 `src/assets/side-b/`로 간다(정리는 Side B 저장이 맡는다). */
+export type UploadPurpose = 'content' | 'profile-photo' | 'music-cover';
+
 export async function uploadFile(
   file: File,
-  purpose: 'content' | 'profile-photo' = 'content',
+  purpose: UploadPurpose = 'content',
 ): Promise<UploadResult> {
   if (file.size > MAX_BYTES) throw new UploadTooLargeError(file.size);
   const dataBase64 = await readAsBase64(file);
@@ -56,9 +59,13 @@ export interface DropZoneOptions {
   onUploaded: (result: UploadResult, file: File) => void;
   /** 업로드 실패마다 호출 */
   onFailed?: (error: unknown, file: File) => void;
+  /** 파일 하나의 업로드를 시작할 때마다 호출. 끝나면 `onUploaded`·`onFailed` 중 하나가 온다 */
+  onStart?: (file: File) => void;
   /** 진행 카드를 붙일 컨테이너 */
   progressHost?: HTMLElement | null;
   multiple?: boolean;
+  /** 저장 위치. 기본 `content` */
+  purpose?: UploadPurpose;
 }
 
 /**
@@ -103,8 +110,9 @@ export function initDropZone(zone: HTMLElement, options: DropZoneOptions): void 
     if (!files || files.length === 0) return;
     for (const file of Array.from(files)) {
       const card = options.progressHost ? addProgressCard(options.progressHost, file) : null;
+      options.onStart?.(file);
       try {
-        const result = await uploadFile(file);
+        const result = await uploadFile(file, options.purpose);
         card?.remove();
         options.onUploaded(result, file);
       } catch (error) {

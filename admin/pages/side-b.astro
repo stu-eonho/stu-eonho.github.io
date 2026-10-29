@@ -1,0 +1,165 @@
+---
+/**
+ * Side B — `/admin/side-b`
+ *
+ * `src/config/music.ts`의 `MUSIC` 선언만 갱신한다. 파일의 나머지(문서 주석·인터페이스·커버
+ * glob)는 손대지 않는다. 저장 전 처리(빈 제목 행 제거·링크 정규화·연도·커버 확인·미참조
+ * 커버 정리)는 서버(`admin/server/handlers/music.mjs`)가 맡는다.
+ *
+ * CRITICAL: `src/config/*`를 import하지 않는다(AdminLayout 주석 참조).
+ */
+import { Icon } from 'astro-icon/components';
+import AdminLayout from '../components/AdminLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import Button from '@/components/ui/Button.astro';
+import Field from '../components/Field.astro';
+import LocalizedField from '../components/LocalizedField.astro';
+import RepeatableList from '../components/RepeatableList.astro';
+import { L } from '../labels';
+
+const FULL = 'grid-column: 1 / -1';
+---
+
+<AdminLayout title={L.nav.sideB} current="side-b" savebar>
+  <div class="admin-page-head" style="margin-top: calc(-1 * var(--spacing-ext-4))">
+    <span></span>
+    <span>
+      <Button variant="compact-outline" href="/side-b" external>{L.sideB.viewPage} (KO)</Button>
+      <Button variant="compact-outline" href="/en/side-b" external>{L.sideB.viewPage} (EN)</Button>
+    </span>
+  </div>
+
+  <div class="admin-stack">
+    <Card>
+      <h2 class="admin-section-title">{L.sideB.list}</h2>
+      <p class="admin-hint" style="margin-bottom: var(--spacing-ext-4)">{L.sideB.intro}</p>
+      <RepeatableList path="music" addLabel={L.sideB.add} emptyNote={L.sideB.empty}>
+        {
+          /*
+          CRITICAL: 행 안의 `data-field`·`data-localized-field` 값은 키 이름(`title` 등)이다.
+          `client/side-b.ts`가 읽을 때마다 `music.<행 순서>.<키>`로 다시 매겨 서버 오류
+          경로와 맞춘다.
+        */
+        }
+        <Field label={L.sideB.kind} for="music-kind" path="kind">
+          <select class="admin-select" id="music-kind" data-name="kind">
+            <option value="song">{L.sideB.kindSong}</option>
+            <option value="album">{L.sideB.kindAlbum}</option>
+          </select>
+        </Field>
+        <Field label={L.sideB.title} for="music-title" path="title">
+          <input class="admin-input" id="music-title" type="text" data-name="title" />
+        </Field>
+        <Field label={L.sideB.artist} for="music-artist" path="artist">
+          <input class="admin-input" id="music-artist" type="text" data-name="artist" />
+        </Field>
+        <div data-album-field>
+          <Field label={L.sideB.album} for="music-album" path="album" hint={L.sideB.albumHint}>
+            <input class="admin-input" id="music-album" type="text" data-name="album" />
+          </Field>
+        </div>
+        <Field label={L.sideB.year} for="music-year" path="year" hint={L.sideB.yearHint}>
+          <input
+            class="admin-input"
+            id="music-year"
+            type="text"
+            inputmode="numeric"
+            placeholder="2024"
+            maxlength="4"
+            data-name="year"
+          />
+        </Field>
+
+        <div style={FULL}>
+          <Field label={L.sideB.cover} for="music-cover" path="cover" hint={L.sideB.coverHint}>
+            <input type="hidden" data-name="cover" />
+            <div
+              style="display: flex; gap: var(--spacing-ext-4); align-items: center; flex-wrap: wrap"
+            >
+              <img
+                class="admin-row-hidden"
+                data-cover-img
+                alt=""
+                width="96"
+                height="96"
+                style="width: 96px; height: 96px; object-fit: cover; border-radius: var(--radius-control); background: var(--chip-fill)"
+              />
+              <div style="flex: 1 1 220px; min-width: 0" data-cover-empty>
+                <button
+                  type="button"
+                  class="admin-drop admin-drop-compact"
+                  id="music-cover"
+                  style="width: 100%"
+                  data-cover-drop
+                >
+                  <Icon name="lucide:image" class="admin-nav-icon" aria-hidden="true" />
+                  <span>{L.sideB.coverDrop}</span>
+                </button>
+              </div>
+              <div class="admin-row-hidden" style="min-width: 0" data-cover-set>
+                <p class="admin-asset-name" data-cover-name></p>
+                <div class="admin-asset-actions">
+                  <Button variant="compact-outline" data-cover-replace
+                    >{L.sideB.coverReplace}</Button
+                  >
+                  <Button variant="compact-outline" data-cover-clear>{L.sideB.coverClear}</Button>
+                </div>
+              </div>
+            </div>
+          </Field>
+        </div>
+
+        <div style={FULL}>
+          <div class="admin-field" data-field="genres" data-invalid="false">
+            <label class="admin-label" for="music-genres">{L.sideB.genres}</label>
+            <div class="admin-chips" data-chips="genres">
+              <input class="admin-chip-input" id="music-genres" type="text" />
+            </div>
+            <p class="admin-hint">{L.sideB.genresHint}</p>
+          </div>
+        </div>
+
+        <div style={FULL}>
+          <LocalizedField
+            label={L.sideB.note}
+            path="note"
+            max={140}
+            multiline
+            hint={L.sideB.noteHint}
+          />
+        </div>
+
+        <div style={FULL}>
+          <Field
+            label={L.sideB.listenUrl}
+            for="music-listen"
+            path="listenUrl"
+            hint={L.sideB.listenHint}
+          >
+            <div style="display: flex; gap: var(--spacing-ext-3); align-items: center">
+              <input
+                class="admin-input"
+                id="music-listen"
+                type="text"
+                inputmode="url"
+                placeholder="https://open.spotify.com/…"
+                style="flex: 1 1 auto; min-width: 0"
+                data-name="listenUrl"
+              />
+              <span class="admin-hint" style="flex: none; white-space: nowrap" data-listen-service
+              ></span>
+            </div>
+          </Field>
+        </div>
+      </RepeatableList>
+    </Card>
+  </div>
+</AdminLayout>
+
+<script>
+  import { initSideB } from '../client/side-b';
+  // CRITICAL: 관리자 페이지는 HMR로 리로드되면 안 된다 — 편집 중인 폼이 날아간다.
+  // 빈 콜백으로 자기 수용해 갱신이 전체 새로고침으로 번지지 않게 한다.
+  import.meta.hot?.accept(() => {});
+  void initSideB();
+</script>

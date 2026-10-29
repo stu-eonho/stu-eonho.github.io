@@ -9,6 +9,8 @@
  * CRITICAL: 프로덕션 경로에서 유일하게 남는 것은 `astro:build:done` 가드 하나이며,
  * 이 훅은 검사만 하고 산출물을 만들지 않는다.
  */
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildGuard } from './build-guard.mjs';
 
 /**
@@ -38,6 +40,7 @@ const ADMIN_ROUTES = [
   ['/admin/posts', './admin/pages/posts.astro'],
   ['/admin/posts/edit', './admin/pages/editor.astro'],
   ['/admin/profile', './admin/pages/profile.astro'],
+  ['/admin/side-b', './admin/pages/side-b.astro'],
   ['/admin/settings', './admin/pages/settings.astro'],
   ['/admin/strings', './admin/pages/strings.astro'],
   ['/admin/tags', './admin/pages/tags.astro'],
@@ -67,7 +70,10 @@ export default function adminConsole() {
 
         updateConfig({
           vite: {
-            plugins: [adminApiPlugin({ root: config.root, logger })],
+            plugins: [
+              adminApiPlugin({ root: config.root, logger }),
+              quietMusicCoverUploads({ root: config.root }),
+            ],
           },
         });
 
@@ -126,6 +132,44 @@ function adminApiPlugin({ root, logger }) {
         }
       };
       server.middlewares.use('/__admin/api', handler);
+    },
+  };
+}
+
+/**
+ * Side B 커버를 올려도 dev 서버가 열린 탭을 전부 새로고침하지 않게 한다.
+ *
+ * 원인: `src/config/music.ts`가 `import.meta.glob('../assets/side-b/*')`로 커버를 모은다. 그
+ * 폴더에 파일이 **생기면** Vite의 glob 플러그인이 `music.ts`를 갱신 대상에 넣고, `music.ts`는
+ * 서버 쪽에만 있는 모듈이라 Astro(`astro:hmr-reload`)가 `full-reload`를 **모든 탭에** 보낸다.
+ * 관리자 Side B 화면은 커버를 드롭한 순간 새로고침되어, 방금 추가한 행과 입력이 사라졌다(실측).
+ *
+ * 그래서 이 폴더의 `create`만 갱신 대상을 비운다. Astro 훅보다 먼저 돌도록 `order: 'post'`이며,
+ * 이 플러그인은 일반(enforce 없음)이라 `enforce: 'post'`인 Astro 훅보다 앞선다.
+ *
+ * 비워도 잃는 것이 없다: 새 커버는 저장 전까지 아무 글도 참조하지 않고, 저장하면 `music.ts`가
+ * 다시 쓰여(`update`) 평소 경로로 glob이 다시 평가된다. 저장 뒤 미참조 커버 정리(`delete`)와
+ * 다른 모든 파일 변경은 건드리지 않는다.
+ *
+ * CRITICAL: `hotUpdate` 하나만 갖는 serve 전용 플러그인이다. 빌드 훅을 추가하지 않는다.
+ *
+ * @param {{ root: URL }} options
+ */
+function quietMusicCoverUploads({ root }) {
+  const coversDir = fileURLToPath(new URL('./src/assets/side-b/', root));
+  return {
+    name: 'admin-console-quiet-music-covers',
+    apply: 'serve',
+    hotUpdate: {
+      order: 'post',
+      /** @param {{ type: string, file: string }} options */
+      handler({ type, file }) {
+        if (type !== 'create') return;
+        const relative = path.relative(coversDir, path.resolve(file));
+        if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) return;
+        if (path.dirname(relative) !== '.') return;
+        return [];
+      },
     },
   };
 }

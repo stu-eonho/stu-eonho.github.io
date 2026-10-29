@@ -71,6 +71,9 @@ export function initRepeatable<T>(
   function uniquifyIds(row: HTMLElement): void {
     const suffix = `r${(rowCounter += 1)}`;
     for (const node of qsa<HTMLElement>('[id]', row)) {
+      // CRITICAL: 아이콘(astro-icon)의 `<symbol id>`는 건드리지 않는다. 같은 SVG의
+      // `<use href="#…">`가 원래 id를 가리키므로, 바꾸면 행 도구·오류 아이콘이 빈칸이 된다.
+      if (node instanceof SVGElement) continue;
       const oldId = node.id;
       const newId = `${oldId}--${suffix}`;
       node.id = newId;
