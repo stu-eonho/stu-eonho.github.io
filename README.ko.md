@@ -42,6 +42,7 @@ Read this in [English](README.md).
 <!-- prettier-ignore-start -->
 | 날짜 | 글 | 카테고리 |
 | --- | --- | --- |
+| 2026-11-10 | [Visual Autoregressive Modeling (VAR)](https://stu-eonho.github.io/paper-review/var) | Paper Review |
 | 2026-09-17 | [Retrieval-Augmented Generation (RAG)](https://stu-eonho.github.io/paper-review/rag) | Paper Review |
 | 2026-09-01 | [제13회 AIKUTHON](https://stu-eonho.github.io/notes/13-aikuthon) | Notes |
 | 2026-08-26 | [World Models](https://stu-eonho.github.io/paper-review/world-models) | Paper Review |
