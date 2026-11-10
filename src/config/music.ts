@@ -33,7 +33,16 @@ export interface MusicEntry {
 /**
  * Side B에 담을 곡·앨범 목록. 위에서 아래 순서가 화면 순서입니다.
  */
-export const MUSIC: MusicEntry[] = [];
+export const MUSIC: MusicEntry[] = [
+  {
+    kind: 'album',
+    title: 'Hurry Up Tomorrow',
+    artist: 'The Weeknd',
+    year: '2025',
+    genres: [],
+    listenUrl: 'https://open.spotify.com/album/3OxfaVgvTxUTy7276t7SPU?si=J0mPF2BCQI6X8WaqAOYaCg',
+  },
+];
 
 /**
  * 커버 이미지. `src/assets/side-b/`에 넣은 파일이 파일명을 키로 자동으로 잡힙니다.
